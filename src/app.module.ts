@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+//import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsuariosModule } from './modules/usuarios/usuarios.module';
 import { EstudantesModule } from './modules/estudantes/estudantes.module';
@@ -13,7 +13,7 @@ import { AvisosModule } from './modules/avisos/avisos.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    //ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     UsuariosModule,
     EstudantesModule,

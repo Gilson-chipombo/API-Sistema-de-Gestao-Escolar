@@ -6,13 +6,10 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // ── CORS ──────────────────────────────────────────────
   app.enableCors();
-
-  // ── Prefixo global ────────────────────────────────────
   app.setGlobalPrefix('api/v1');
 
-  // ── Validação automática de DTOs ──────────────────────
+  // Validação automática de DTOs
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,           // remove campos não declarados no DTO
@@ -22,7 +19,6 @@ async function bootstrap() {
     }),
   );
 
-  // ── Swagger / OpenAPI ─────────────────────────────────
   const config = new DocumentBuilder()
     .setTitle('Sistema de Gestão Escolar')
     .setDescription(
@@ -49,7 +45,7 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
-  console.log(`\n🏫  Gestão Escolar API running on: http://localhost:${port}/api/v1`);
-  console.log(`📚  Swagger docs:                  http://localhost:${port}/api/docs\n`);
+  console.log(`\nGestão Escolar API running on: http://localhost:${port}/api/v1`);
+  console.log(`Swagger docs:                  http://localhost:${port}/api/docs\n`);
 }
 bootstrap();
