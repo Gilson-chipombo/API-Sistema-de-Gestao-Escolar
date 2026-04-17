@@ -102,6 +102,71 @@ async function main() {
   });
   console.log('✅  Professor criado:', professor.nome_prof);
 
+  // ── Professores Adicionais ────────────────────────────
+  const prof2Pass = await bcrypt.hash('prof2123', 10);
+  const prof2Usuario = await prisma.usuario.upsert({
+    where: { email: 'joana.costa@escola.ao' },
+    update: {},
+    create: {
+      user_name: 'Joana Costa',
+      email: 'joana.costa@escola.ao',
+      password: prof2Pass,
+      perfil: PerfilUsuario.PROFESSOR,
+      status: StatusUsuario.ATIVO,
+    },
+  });
+
+  const professor2 = await prisma.professor.upsert({
+    where: { numero_bi_prof: '001234567LA001' },
+    update: {},
+    create: {
+      nome_prof: 'Joana Costa',
+      data_nascimento_prof: new Date('1985-08-20'),
+      telefone_prof: '923000002',
+      numero_bi_prof: '001234567LA001',
+      data_emissao_bi_prof: new Date('2016-05-15'),
+      endereco_fisico_prof: 'Bairro Miramar, Luanda',
+      naturalidade_prof: 'Benguela',
+      nivel_academico: NivelAcademico.LICENCIATURA,
+      area_formacao_prof: 'Português',
+      status: StatusProfessor.ATIVO,
+      usuario_id: prof2Usuario.id_usuario,
+    },
+  });
+  console.log('✅  Professor 2 criado:', professor2.nome_prof);
+
+  const prof3Pass = await bcrypt.hash('prof3123', 10);
+  const prof3Usuario = await prisma.usuario.upsert({
+    where: { email: 'carlos.dias@escola.ao' },
+    update: {},
+    create: {
+      user_name: 'Carlos Dias',
+      email: 'carlos.dias@escola.ao',
+      password: prof3Pass,
+      perfil: PerfilUsuario.PROFESSOR,
+      status: StatusUsuario.ATIVO,
+    },
+  });
+
+  const professor3 = await prisma.professor.upsert({
+    where: { numero_bi_prof: '002345678LA002' },
+    update: {},
+    create: {
+      nome_prof: 'Carlos Dias',
+      data_nascimento_prof: new Date('1978-12-10'),
+      telefone_prof: '923000003',
+      numero_bi_prof: '002345678LA002',
+      data_emissao_bi_prof: new Date('2015-08-22'),
+      endereco_fisico_prof: 'Bairro Talatona, Luanda',
+      naturalidade_prof: 'Luanda',
+      nivel_academico: NivelAcademico.LICENCIATURA,
+      area_formacao_prof: 'Física',
+      status: StatusProfessor.ATIVO,
+      usuario_id: prof3Usuario.id_usuario,
+    },
+  });
+  console.log('✅  Professor 3 criado:', professor3.nome_prof);
+
   // ── Turma ─────────────────────────────────────────────
   const turma = await prisma.turma.create({
     data: {

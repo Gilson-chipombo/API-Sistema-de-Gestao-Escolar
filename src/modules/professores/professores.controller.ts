@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Put, Delete,
-  Body, Param, Query, ParseIntPipe, UseGuards,
+  Body, Param, Query, ParseIntPipe, UseGuards, Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ProfessoresService } from './professores.service';
@@ -14,42 +14,84 @@ import { Roles } from '../../common/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard)
 @Controller('professores')
 export class ProfessoresController {
+  private readonly logger = new Logger(ProfessoresController.name);
+
   constructor(private readonly service: ProfessoresService) {}
 
   @Post()
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'SECRETARIA')
   @ApiOperation({ summary: 'Registar professor' })
-  create(@Body() dto: CreateProfessorDto) {
-    return this.service.create(dto);
+  async create(@Body() dto: CreateProfessorDto) {
+    this.logger.log(`[CREATE] Registando professor: ${dto.nome_prof}`);
+    try {
+      const result = await this.service.create(dto);
+      this.logger.log(`[CREATE] Professor criado - ID: ${result.id_prof}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`[CREATE] Erro ao registar professor: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   @Get()
   @ApiOperation({ summary: 'Listar professores' })
   @ApiQuery({ name: 'status', required: false })
-  findAll(@Query('status') status?: string) {
-    return this.service.findAll(status);
+  async findAll(@Query('status') status?: string) {
+    this.logger.log(`[FINDALL] Listando professores - Status: ${status || 'Todos'}`);
+    try {
+      const result = await this.service.findAll(status);
+      this.logger.log(`[FINDALL] ${result.length} professores encontrados`);
+      return result;
+    } catch (error) {
+      this.logger.error(`[FINDALL] Erro ao listar: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Detalhe do professor' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    this.logger.log(`[FINDONE] Buscando professor ID: ${id}`);
+    try {
+      const result = await this.service.findOne(id);
+      this.logger.log(`[FINDONE] Professor encontrado: ${result.nome_prof}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`[FINDONE] Erro: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   @Put(':id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'SECRETARIA')
   @ApiOperation({ summary: 'Actualizar professor' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProfessorDto) {
-    return this.service.update(id, dto);
+  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProfessorDto) {
+    this.logger.log(`[UPDATE] Atualizando professor ${id}`);
+    try {
+      const result = await this.service.update(id, dto);
+      this.logger.log(`[UPDATE] Professor ${id} atualizado com sucesso`);
+      return result;
+    } catch (error) {
+      this.logger.error(`[UPDATE] Erro: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   @Delete(':id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Desactivar professor' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.service.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    this.logger.log(`[DELETE] Desativando professor ${id}`);
+    try {
+      const result = await this.service.remove(id);
+      this.logger.log(`[DELETE] Professor ${id} desativado`);
+      return result;
+    } catch (error) {
+      this.logger.error(`[DELETE] Erro: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 }
