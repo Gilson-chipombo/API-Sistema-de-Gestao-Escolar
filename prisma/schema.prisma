@@ -78,6 +78,8 @@ model Professor {
   usuario     Usuario?  @relation(fields: [usuario_id], references: [id_usuario])
 
   turmas_dirigidas Turma[]
+  disciplinas      ProfessorDisciplina[]
+  turmas           ProfessorTurma[]
 }
 
 // ─────────────────────────────────────────────
@@ -116,6 +118,7 @@ model Turma {
   estudantes Estudante[]
   notas      Nota[]
   faltas     Falta[]
+  professores ProfessorTurma[]
 }
 
 // ─────────────────────────────────────────────
@@ -164,8 +167,9 @@ model Disciplina {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
-  notas  Nota[]
-  faltas Falta[]
+  notas       Nota[]
+  faltas      Falta[]
+  professores ProfessorDisciplina[]
 }
 
 // ─────────────────────────────────────────────
@@ -245,4 +249,38 @@ model Aviso {
 
   professor_id Int?
   professor    Usuario? @relation(fields: [professor_id], references: [id_usuario])
+}
+
+// ─────────────────────────────────────────────
+// TB ProfessorDisciplina (Many-to-Many)
+// ─────────────────────────────────────────────
+model ProfessorDisciplina {
+  id Int @id @default(autoincrement())
+
+  professor_id Int
+  professor    Professor  @relation(fields: [professor_id], references: [id_prof], onDelete: Cascade)
+
+  disciplina_id Int
+  disciplina    Disciplina @relation(fields: [disciplina_id], references: [id_disc], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+
+  @@unique([professor_id, disciplina_id])
+}
+
+// ─────────────────────────────────────────────
+// TB ProfessorTurma (Many-to-Many)
+// ─────────────────────────────────────────────
+model ProfessorTurma {
+  id Int @id @default(autoincrement())
+
+  professor_id Int
+  professor    Professor @relation(fields: [professor_id], references: [id_prof], onDelete: Cascade)
+
+  turma_id Int
+  turma    Turma @relation(fields: [turma_id], references: [id_turma], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+
+  @@unique([professor_id, turma_id])
 }

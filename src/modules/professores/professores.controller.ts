@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ProfessoresService } from './professores.service';
-import { CreateProfessorDto, UpdateProfessorDto } from './dto/professor.dto';
+import { CreateProfessorDto, UpdateProfessorDto, CreateProfessorWithUserDto } from './dto/professor.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -21,15 +21,23 @@ export class ProfessoresController {
   @Post()
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'SECRETARIA')
-  @ApiOperation({ summary: 'Registar professor' })
-  async create(@Body() dto: CreateProfessorDto) {
-    this.logger.log(`[CREATE] Registando professor: ${dto.nome_prof}`);
+  @ApiOperation({ summary: 'Registar professor com usuário' })
+  async create(@Body() dto: CreateProfessorWithUserDto) {
+    this.logger.log(`[CREATE] Registando professor com usuário: ${dto.nome_prof}`);
     try {
-      const result = await this.service.create(dto);
-      this.logger.log(`[CREATE] Professor criado - ID: ${result.id_prof}`);
-      return result;
-    } catch (error) {
-      this.logger.error(`[CREATE] Erro ao registar professor: ${error.message}`, error.stack);
+      // Se vier com password, é CreateProfessorWithUserDto
+      if ((dto as CreateProfessorWithUserDto).password) {
+        const result = await this.service.createWithUser(dto as CreateProfessorWithUserDto);
+        this.logger.log(`[CREATE] Professor criado com usuário - ID: ${result.id_prof}`);
+        return result;
+      } else {
+        // Senão, é CreateProfessorDto normal
+        const result = await this.service.create(dto as CreateProfessorDto);
+        this.logger.log(`[CREATE] Professor criado - ID: ${result.id_prof}`);
+        return result;
+      }
+    } catch (error: any) {
+      this.logger.error(`[CREATE] Erro ao registar professor: ${error?.message}`, error?.stack);
       throw error;
     }
   }
@@ -43,8 +51,8 @@ export class ProfessoresController {
       const result = await this.service.findAll(status);
       this.logger.log(`[FINDALL] ${result.length} professores encontrados`);
       return result;
-    } catch (error) {
-      this.logger.error(`[FINDALL] Erro ao listar: ${error.message}`, error.stack);
+    } catch (error: any) {
+      this.logger.error(`[FINDALL] Erro ao listar: ${error?.message}`, error?.stack);
       throw error;
     }
   }
@@ -57,8 +65,8 @@ export class ProfessoresController {
       const result = await this.service.findOne(id);
       this.logger.log(`[FINDONE] Professor encontrado: ${result.nome_prof}`);
       return result;
-    } catch (error) {
-      this.logger.error(`[FINDONE] Erro: ${error.message}`, error.stack);
+    } catch (error: any) {
+      this.logger.error(`[FINDONE] Erro: ${error?.message}`, error?.stack);
       throw error;
     }
   }
@@ -73,8 +81,8 @@ export class ProfessoresController {
       const result = await this.service.update(id, dto);
       this.logger.log(`[UPDATE] Professor ${id} atualizado com sucesso`);
       return result;
-    } catch (error) {
-      this.logger.error(`[UPDATE] Erro: ${error.message}`, error.stack);
+    } catch (error: any) {
+      this.logger.error(`[UPDATE] Erro: ${error?.message}`, error?.stack);
       throw error;
     }
   }
@@ -89,8 +97,8 @@ export class ProfessoresController {
       const result = await this.service.remove(id);
       this.logger.log(`[DELETE] Professor ${id} desativado`);
       return result;
-    } catch (error) {
-      this.logger.error(`[DELETE] Erro: ${error.message}`, error.stack);
+    } catch (error: any) {
+      this.logger.error(`[DELETE] Erro: ${error?.message}`, error?.stack);
       throw error;
     }
   }
