@@ -50,20 +50,6 @@ export class TurmasController {
     }
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Detalhe da turma (com estudantes)' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    this.logger.log(`[FINDONE] Buscando turma com ID: ${id}`);
-    try {
-      const result = await this.service.findOne(id);
-      this.logger.log(`[FINDONE] Turma encontrada: ${result.sigla_turma}`);
-      return result;
-    } catch (error) {
-      this.logger.error(`[FINDONE] Erro ao buscar turma ${id}: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-
   @Get('professor/:professorId')
   @ApiOperation({ summary: 'Turmas de um professor (como diretor ou lente)' })
   async findByProfessor(@Param('professorId', ParseIntPipe) professorId: number) {
@@ -78,7 +64,19 @@ export class TurmasController {
     }
   }
 
-  @Put(':id')
+  @Get(':id')
+  @ApiOperation({ summary: 'Detalhe da turma (com estudantes)' })
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    this.logger.log(`[FINDONE] Buscando turma com ID: ${id}`);
+    try {
+      const result = await this.service.findOne(id);
+      this.logger.log(`[FINDONE] Turma encontrada: ${result.sigla_turma}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`[FINDONE] Erro ao buscar turma ${id}: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'SECRETARIA')
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTurmaDto) {
