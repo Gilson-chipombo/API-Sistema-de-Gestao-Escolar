@@ -184,6 +184,21 @@ export class ProfessoresService {
     return prof;
   }
 
+  async findByUsuario(usuarioId: number) {
+    this.logger.debug(`[SERVICE-FINDBYUSER] Buscando professor para usuário ID: ${usuarioId}`);
+    const prof = await this.prisma.professor.findUnique({
+      where: { usuario_id: usuarioId },
+      include: {
+        usuario: true,
+        turmas_dirigidas: true,
+        disciplinas: { include: { disciplina: true } },
+        turmas: { include: { turma: true } },
+      },
+    });
+    if (!prof) throw new NotFoundException(`Professor para usuário #${usuarioId} não encontrado.`);
+    return prof;
+  }
+
   async update(id: number, dto: UpdateProfessorDto) {
     this.logger.debug(`[SERVICE-UPDATE] Atualizando professor ID: ${id}`);
     await this.findOne(id);

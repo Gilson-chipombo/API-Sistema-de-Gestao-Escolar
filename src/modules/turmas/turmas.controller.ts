@@ -64,6 +64,20 @@ export class TurmasController {
     }
   }
 
+  @Get('professor/:professorId')
+  @ApiOperation({ summary: 'Turmas de um professor (como diretor ou lente)' })
+  async findByProfessor(@Param('professorId', ParseIntPipe) professorId: number) {
+    this.logger.log(`[FINDBYPROF] Buscando turmas do professor ${professorId}`);
+    try {
+      const result = await this.service.findByProfessor(professorId);
+      this.logger.log(`[FINDBYPROF] ${result.length} turmas encontradas`);
+      return result;
+    } catch (error) {
+      this.logger.error(`[FINDBYPROF] Erro ao buscar turmas: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
   @Put(':id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'SECRETARIA')

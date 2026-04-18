@@ -71,6 +71,20 @@ export class ProfessoresController {
     }
   }
 
+  @Get('usuario/:usuarioId')
+  @ApiOperation({ summary: 'Detalhe do professor por usuário ID' })
+  async findByUser(@Param('usuarioId', ParseIntPipe) usuarioId: number) {
+    this.logger.log(`[FINDBYUSER] Buscando professor para usuário ${usuarioId}`);
+    try {
+      const result = await this.service.findByUsuario(usuarioId);
+      this.logger.log(`[FINDBYUSER] Professor encontrado: ${result.nome_prof}`);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`[FINDBYUSER] Erro: ${error?.message}`, error?.stack);
+      throw error;
+    }
+  }
+
   @Put(':id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'SECRETARIA')

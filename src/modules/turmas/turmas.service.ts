@@ -66,6 +66,32 @@ export class TurmasService {
     }
   }
 
+  async findByProfessor(professorId: number) {
+    this.logger.debug(`[SERVICE-FINDBYPROF] Buscando turmas do professor ${professorId}`);
+    try {
+      // Turmas onde o professor é diretor ou leciona
+      const turmas = await this.prisma.turma.findMany({
+        where: {
+          OR: [
+            { diretor_turma: professorId },
+            { professores: { some: { professor_id: professorId } } },
+          ],
+        },
+        include: {
+          curso: { select: { id_curso: true, sigla_curso: true, descricao_curso: true } },
+          diretor: { select: { id_prof: true, nome_prof: true } },
+          _count: { select: { estudantes: true } },
+        },
+        orderBy: [{ classe_turma: 'asc' }, { sigla_turma: 'asc' }],
+      });
+      this.logger.debug(`[SERVICE-FINDBYPROF] ${turmas.length} turmas encontradas para professor ${professorId}`);
+      return turmas;
+    } catch (error) {
+      this.logger.error(`[SERVICE-FINDBYPROF] Erro ao buscar turmas: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
   async update(id: number, dto: UpdateTurmaDto) {
     this.logger.debug(`[SERVICE-UPDATE] Atualizando turma ${id} com dados: ${JSON.stringify(dto)}`);
     try {
