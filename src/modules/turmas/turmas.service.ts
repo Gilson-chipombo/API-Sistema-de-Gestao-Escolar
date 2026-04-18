@@ -29,8 +29,8 @@ export class TurmasService {
           ...(classe && { classe_turma: classe }),
         },
         include: {
-          curso: { select: { sigla_curso: true } },
-          diretor: { select: { nome_prof: true } },
+          curso: { select: { id_curso: true, sigla_curso: true, descricao_curso: true, duracao_semestres: true } },
+          diretor: { select: { id_prof: true, nome_prof: true } },
           _count: { select: { estudantes: true } },
         },
         orderBy: [{ classe_turma: 'asc' }, { sigla_turma: 'asc' }],
