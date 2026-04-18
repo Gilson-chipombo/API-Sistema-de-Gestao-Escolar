@@ -45,8 +45,11 @@ export class UsuariosService {
     const payload = { sub: user.id_usuario, email: user.email, perfil: user.perfil };
     return {
       access_token: this.jwtService.sign(payload),
+      id_usuario: user.id_usuario,
+      email: user.email,
       perfil: user.perfil,
       user_name: user.user_name,
+      status: user.status,
     };
   }
 
@@ -63,6 +66,35 @@ export class UsuariosService {
       select: { id_usuario: true, user_name: true, email: true, perfil: true, status: true, created_at: true },
     });
     if (!user) throw new NotFoundException(`Utilizador #${id} não encontrado.`);
+    return user;
+  }
+
+  async update(id: number, dto: any) {
+    await this.findOne(id);
+
+    const updateData: any = {};
+
+    if (dto.email) {
+      const emailExists = await this.prisma.usuario.findUnique({ where: { email: dto.email } });
+      if (emailExists && emailExists.id_usuario !== id) {
+        throw new ConflictException('Email já registado.');
+      }
+      updateData.email = dto.email;
+    }
+
+    if (dto.password) {
+      updateData.password = await bcrypt.hash(dto.password, 10);
+    }
+
+    if (dto.status) {
+      updateData.status = dto.status;
+    }
+
+    const user = await this.prisma.usuario.update({
+      where: { id_usuario: id },
+      data: updateData,
+      select: { id_usuario: true, user_name: true, email: true, perfil: true, status: true, created_at: true },
+    });
     return user;
   }
 
