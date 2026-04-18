@@ -89,10 +89,12 @@ model Curso {
   id_curso        Int      @id @default(autoincrement())
   sigla_curso     String   @unique
   descricao_curso String
+  duracao_semestres Int?   // Duração em semestres
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
-  turmas Turma[]
+  turmas        Turma[]
+  disciplinas   CursoDisciplina[]
 }
 
 // ─────────────────────────────────────────────
@@ -167,6 +169,24 @@ model Disciplina {
   notas       Nota[]
   faltas      Falta[]
   professores ProfessorDisciplina[]
+  cursos      CursoDisciplina[]
+}
+
+// ─────────────────────────────────────────────
+// TB Relacionamento: Curso-Disciplina (N:N)
+// ─────────────────────────────────────────────
+model CursoDisciplina {
+  id                Int      @id @default(autoincrement())
+  curso_id          Int
+  disciplina_id     Int
+  ordem             Int?     // Ordem da disciplina no curso
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  curso      Curso      @relation(fields: [curso_id], references: [id_curso], onDelete: Cascade)
+  disciplina Disciplina @relation(fields: [disciplina_id], references: [id_disc], onDelete: Cascade)
+
+  @@unique([curso_id, disciplina_id])
 }
 
 // ─────────────────────────────────────────────
