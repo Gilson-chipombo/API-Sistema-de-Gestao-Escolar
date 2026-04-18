@@ -22,7 +22,7 @@ export class FaltasService {
         ...(tipo && { tipo_falta: tipo as any }),
       },
       include: {
-        estudante: { select: { nome_estudante: true, numero_matricula: true } },
+        estudante: { select: { nome_estudante: true, id_estudante: true } },
         disciplina: { select: { sigla_disc: true, descricao_disc: true } },
         turma: { select: { sigla_turma: true, classe_turma: true } },
       },
@@ -43,7 +43,7 @@ export class FaltasService {
   async resumoPorEstudante(estudanteId: number, turmaId: number) {
     const estudante = await this.prisma.estudante.findUnique({
       where: { id_estudante: estudanteId },
-      select: { nome_estudante: true, numero_matricula: true },
+      select: { nome_estudante: true, id_estudante: true },
     });
     if (!estudante) throw new NotFoundException(`Estudante #${estudanteId} não encontrado.`);
 

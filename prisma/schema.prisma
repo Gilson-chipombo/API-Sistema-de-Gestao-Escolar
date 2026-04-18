@@ -141,17 +141,14 @@ model Estudante {
   numero_bi_estudante       String          @unique
   telefone_estudante        String?
   endereco_fisico_estudante String
-  numero_matricula          Int             @unique
-  turno_estudante           String
-  classe_estudante          String
   encarregado_estudante     String?
   data_cadastro             DateTime?       @db.Date
   status                    StatusEstudante
   created_at                DateTime        @default(now())
   updated_at                DateTime        @updatedAt
 
-  turma_id Int
-  turma    Turma @relation(fields: [turma_id], references: [id_turma])
+  turma_id Int?
+  turma    Turma? @relation(fields: [turma_id], references: [id_turma])
 
   notas  Nota[]
   faltas Falta[]

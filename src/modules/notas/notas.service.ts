@@ -22,7 +22,7 @@ export class NotasService {
         ...(anoLetivo && { ano_letivo: anoLetivo }),
       },
       include: {
-        estudante: { select: { nome_estudante: true, numero_matricula: true } },
+        estudante: { select: { nome_estudante: true, id_estudante: true } },
         disciplina: { select: { sigla_disc: true, descricao_disc: true } },
         turma: { select: { sigla_turma: true, classe_turma: true } },
       },
@@ -43,7 +43,7 @@ export class NotasService {
   async boletim(estudanteId: number, anoLetivo: number) {
     const estudante = await this.prisma.estudante.findUnique({
       where: { id_estudante: estudanteId },
-      select: { nome_estudante: true, numero_matricula: true, classe_estudante: true, turma: { select: { sigla_turma: true } } },
+      select: { nome_estudante: true, id_estudante: true, turma: { select: { sigla_turma: true } } },
     });
     if (!estudante) throw new NotFoundException(`Estudante #${estudanteId} não encontrado.`);
 
