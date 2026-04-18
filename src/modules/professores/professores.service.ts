@@ -160,7 +160,12 @@ export class ProfessoresService {
     return this.prisma.professor.findMany({
       where: { ...(status && { status: status as any }) },
       orderBy: { nome_prof: 'asc' },
-      include: { usuario: true, turmas_dirigidas: true, disciplinas: true, turmas: true },
+      include: {
+        usuario: true,
+        turmas_dirigidas: true,
+        disciplinas: { include: { disciplina: true } },
+        turmas: { include: { turma: true } },
+      },
     });
   }
 
@@ -168,7 +173,12 @@ export class ProfessoresService {
     this.logger.debug(`[SERVICE-FINDONE] Buscando professor ID: ${id}`);
     const prof = await this.prisma.professor.findUnique({
       where: { id_prof: id },
-      include: { usuario: true, turmas_dirigidas: true, disciplinas: true, turmas: true },
+      include: {
+        usuario: true,
+        turmas_dirigidas: true,
+        disciplinas: { include: { disciplina: true } },
+        turmas: { include: { turma: true } },
+      },
     });
     if (!prof) throw new NotFoundException(`Professor #${id} não encontrado.`);
     return prof;
