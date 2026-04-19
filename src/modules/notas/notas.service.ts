@@ -65,4 +65,40 @@ export class NotasService {
     await this.findOne(id);
     return this.prisma.nota.delete({ where: { id_nota: id } });
   }
+
+  // ========== UPSERT NOTA ==========
+  // Atualiza nota se já existe, ou cria nova nota
+  async upsertNota(dto: CreateNotaDto) {
+    // Procurar nota existente com mesma estudante, disciplina, trimestre e ano letivo
+    const notaExistente = await this.prisma.nota.findFirst({
+      where: {
+        estudante_id: dto.estudante_id,
+        disciplina_id: dto.disciplina_id,
+        trimestre_nota: dto.trimestre_nota,
+        ano_letivo: dto.ano_letivo,
+      },
+    });
+
+    if (notaExistente) {
+      // Atualizar nota existente
+      return this.prisma.nota.update({
+        where: { id_nota: notaExistente.id_nota },
+        data: {
+          mac_notas: dto.mac_notas,
+          pp_notas: dto.pp_notas,
+          pt_notas: dto.pt_notas,
+          data_nota: dto.data_nota,
+          turma_id: dto.turma_id,
+          updated_at: new Date(),
+        },
+        include: { estudante: true, disciplina: true, turma: true },
+      });
+    } else {
+      // Criar nova nota
+      return this.prisma.nota.create({
+        data: dto,
+        include: { estudante: true, disciplina: true, turma: true },
+      });
+    }
+  }
 }

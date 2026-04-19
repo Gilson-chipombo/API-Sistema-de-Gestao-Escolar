@@ -181,6 +181,32 @@ export class ProfessoresService {
       },
     });
     if (!prof) throw new NotFoundException(`Professor #${id} não encontrado.`);
+
+    // Filtrar turmas que não existem mais (limpeza automática)
+    if (prof.turmas && prof.turmas.length > 0) {
+      const turmasValidas = prof.turmas.filter(pt => pt.turma !== null);
+      const turmasInvalidas = prof.turmas.filter(pt => pt.turma === null);
+      
+      if (turmasInvalidas.length > 0) {
+        this.logger.warn(
+          `[SERVICE-FINDONE] Professor ${prof.id_prof} tem ${turmasInvalidas.length} turma(s) deletada(s). Limpando...`,
+        );
+        
+        // Deletar referências de turmas que não existem
+        await Promise.all(
+          turmasInvalidas.map(pt =>
+            this.prisma.professorTurma.delete({
+              where: { id: pt.id },
+            }).catch(err => 
+              this.logger.warn(`[SERVICE-FINDONE] Erro ao deletar referência de turma: ${err.message}`)
+            ),
+          ),
+        );
+      }
+
+      prof.turmas = turmasValidas;
+    }
+
     return prof;
   }
 
@@ -196,6 +222,32 @@ export class ProfessoresService {
       },
     });
     if (!prof) throw new NotFoundException(`Professor para usuário #${usuarioId} não encontrado.`);
+
+    // Filtrar turmas que não existem mais (limpeza automática)
+    if (prof.turmas && prof.turmas.length > 0) {
+      const turmasValidas = prof.turmas.filter(pt => pt.turma !== null);
+      const turmasInvalidas = prof.turmas.filter(pt => pt.turma === null);
+      
+      if (turmasInvalidas.length > 0) {
+        this.logger.warn(
+          `[SERVICE-FINDBYUSER] Professor ${prof.id_prof} tem ${turmasInvalidas.length} turma(s) deletada(s). Limpando...`,
+        );
+        
+        // Deletar referências de turmas que não existem
+        await Promise.all(
+          turmasInvalidas.map(pt =>
+            this.prisma.professorTurma.delete({
+              where: { id: pt.id },
+            }).catch(err => 
+              this.logger.warn(`[SERVICE-FINDBYUSER] Erro ao deletar referência de turma: ${err.message}`)
+            ),
+          ),
+        );
+      }
+
+      prof.turmas = turmasValidas;
+    }
+
     return prof;
   }
 

@@ -24,6 +24,14 @@ export class NotasController {
     return this.service.create(dto);
   }
 
+  @Post('upsert')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'PROFESSOR', 'SECRETARIA')
+  @ApiOperation({ summary: 'Lançar ou atualizar nota (UPSERT)' })
+  upsert(@Body() dto: CreateNotaDto) {
+    return this.service.upsertNota(dto);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Listar notas com filtros' })
   @ApiQuery({ name: 'estudanteId', required: false, type: Number })
