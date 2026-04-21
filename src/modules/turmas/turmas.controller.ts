@@ -64,20 +64,6 @@ export class TurmasController {
     }
   }
 
-  @Get(':id/disciplinas-count')
-  @ApiOperation({ summary: 'Contar disciplinas de uma turma' })
-  async countDisciplinas(@Param('id', ParseIntPipe) id: number) {
-    this.logger.log(`[COUNT-DISC] Contando disciplinas da turma ${id}`);
-    try {
-      const result = await this.service.countDisciplinas(id);
-      this.logger.log(`[COUNT-DISC] Turma ${id} tem ${result} disciplinas`);
-      return { turma_id: id, total_disciplinas: result };
-    } catch (error) {
-      this.logger.error(`[COUNT-DISC] Erro ao contar disciplinas: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-
   @Get(':id')
   @ApiOperation({ summary: 'Detalhe da turma (com estudantes)' })
   async findOne(@Param('id', ParseIntPipe) id: number) {

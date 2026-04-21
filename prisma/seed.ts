@@ -286,6 +286,7 @@ async function main() {
             turma_id: turma.id_turma,
             data_falta: new Date(2025, 10, Math.floor(Math.random() * 20) + 1),
             tipo_falta: TipoFalta.INJUSTIFICADA,
+           // professor_id: professor.id_prof,
           },
         });
       }
@@ -327,7 +328,7 @@ async function main() {
       destinatarios: DestinatarioAviso.ESTUDANTES,
       data_publicacao: tresDispasAtras,
       prioridade: PrioridadeAviso.ALTA,
-      professor_id: professor.usuario_id,
+    //  professor_id: professor.id_usuario,
     },
   });
 
