@@ -117,4 +117,31 @@ export class TurmasService {
       throw error;
     }
   }
+
+  async countDisciplinas(turmaId: number): Promise<number> {
+    this.logger.debug(`[SERVICE-COUNT-DISC] Contando disciplinas da turma ${turmaId}`);
+    try {
+      // Buscar turma para pegar o curso_id
+      const turma = await this.prisma.turma.findUnique({
+        where: { id_turma: turmaId },
+        select: { curso_id: true },
+      });
+
+      if (!turma) {
+        this.logger.warn(`[SERVICE-COUNT-DISC] Turma ${turmaId} não encontrada`);
+        throw new NotFoundException(`Turma #${turmaId} não encontrada.`);
+      }
+
+      // Contar disciplinas associadas ao curso
+      const count = await this.prisma.cursoDisciplina.count({
+        where: { curso_id: turma.curso_id },
+      });
+
+      this.logger.debug(`[SERVICE-COUNT-DISC] Turma ${turmaId} tem ${count} disciplinas`);
+      return count;
+    } catch (error) {
+      this.logger.error(`[SERVICE-COUNT-DISC] Erro ao contar disciplinas: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
 }

@@ -69,6 +69,30 @@ async function main() {
   }
   console.log('✅  Disciplinas criadas');
 
+  // ── Associar Disciplinas aos Cursos ────────────────────
+  // Buscar disciplinas criadas
+  const allDisciplinas = await prisma.disciplina.findMany();
+  
+  // Disciplinas para o curso de Informática
+  const disciplinasInformatica = allDisciplinas.filter(d => 
+    ['MAT', 'PORT', 'FIS', 'QUIM', 'INF'].includes(d.sigla_disc)
+  );
+  
+  // Remover associações antigas
+  await prisma.cursoDisciplina.deleteMany({ where: { curso_id: cursoInf.id_curso } });
+  
+  // Criar novas associações
+  for (let i = 0; i < disciplinasInformatica.length; i++) {
+    await prisma.cursoDisciplina.create({
+      data: {
+        curso_id: cursoInf.id_curso,
+        disciplina_id: disciplinasInformatica[i].id_disc,
+        ordem: i + 1,
+      },
+    });
+  }
+  console.log('✅  Disciplinas associadas ao curso Informática');
+
   // ── Professor ─────────────────────────────────────────
   const profPass = await bcrypt.hash('prof123', 10);
   const profUsuario = await prisma.usuario.upsert({
@@ -167,6 +191,21 @@ async function main() {
   });
   console.log('✅  Professor 3 criado:', professor3.nome_prof);
 
+  // ── Estudante com Usuário ─────────────────────────────
+  const estudantePass = await bcrypt.hash('aluno123', 10);
+  const estudanteUsuario = await prisma.usuario.upsert({
+    where: { email: 'maria.ferreira@escola.ao' },
+    update: {},
+    create: {
+      user_name: 'Maria João Ferreira',
+      email: 'maria.ferreira@escola.ao',
+      password: estudantePass,
+      perfil: PerfilUsuario.ESTUDANTE,
+      status: StatusUsuario.ATIVO,
+    },
+  });
+  console.log('✅  Usuário Estudante criado:', estudanteUsuario.email);
+
   // ── Turma ─────────────────────────────────────────────
   const turma = await prisma.turma.create({
     data: {
@@ -199,40 +238,108 @@ async function main() {
   console.log('✅  Estudante criado:', estudante.nome_estudante);
 
   // ── Notas de exemplo ──────────────────────────────────
-  const mat = await prisma.disciplina.findUnique({ where: { sigla_disc: 'MAT' } });
-  await prisma.nota.create({
-    data: {
-      estudante_id: estudante.id_estudante,
-      disciplina_id: mat!.id_disc,
-      turma_id: turma.id_turma,
-      trimestre_nota: 1,
-      mac_notas: 14.5,
-      pp_notas: 13.0,
-      pt_notas: 15.0,
-      ano_letivo: 2025,
-    },
-  });
-  console.log('✅  Nota de exemplo criada');
+  const disciplinasArray = await prisma.disciplina.findMany();
+  const notasExemplo = [
+    { disc: 'MAT', trimestre: 1, mac: 14.5, pp: 13.0, pt: 15.0 },
+    { disc: 'PORT', trimestre: 1, mac: 15.0, pp: 14.0, pt: 14.5 },
+    { disc: 'FIS', trimestre: 1, mac: 13.5, pp: 12.5, pt: 14.0 },
+    { disc: 'QUIM', trimestre: 1, mac: 14.0, pp: 13.5, pt: 13.5 },
+    { disc: 'BIO', trimestre: 1, mac: 15.5, pp: 15.0, pt: 16.0 },
+  ];
 
-  // ── Aviso ─────────────────────────────────────────────
+  for (const nota of notasExemplo) {
+    const disc = disciplinasArray.find(d => d.sigla_disc === nota.disc);
+    if (disc) {
+      await prisma.nota.create({
+        data: {
+          estudante_id: estudante.id_estudante,
+          disciplina_id: disc.id_disc,
+          turma_id: turma.id_turma,
+          trimestre_nota: nota.trimestre,
+          mac_notas: nota.mac,
+          pp_notas: nota.pp,
+          pt_notas: nota.pt,
+          ano_letivo: 2025,
+        },
+      });
+    }
+  }
+  console.log('✅  Notas de exemplo criadas');
+
+  // ── Faltas de exemplo ─────────────────────────────────
+  const faltasExemplo = [
+    { disc: 'MAT', count: 2 },
+    { disc: 'PORT', count: 1 },
+    { disc: 'FIS', count: 0 },
+    { disc: 'QUIM', count: 1 },
+    { disc: 'BIO', count: 1 },
+  ];
+
+  for (const falta of faltasExemplo) {
+    const disc = disciplinasArray.find(d => d.sigla_disc === falta.disc);
+    if (disc) {
+      for (let i = 0; i < falta.count; i++) {
+        await prisma.falta.create({
+          data: {
+            estudante_id: estudante.id_estudante,
+            disciplina_id: disc.id_disc,
+            turma_id: turma.id_turma,
+            data_falta: new Date(2025, 10, Math.floor(Math.random() * 20) + 1),
+            tipo_falta: TipoFalta.INJUSTIFICADA,
+          },
+        });
+      }
+    }
+  }
+  console.log('✅  Faltas de exemplo criadas');
+
+  // ── Avisos ────────────────────────────────────────────
+  const hoje = new Date();
+  const ontemMeia = new Date(hoje.getTime() - 24 * 60 * 60 * 1000); // ontem
+  const tresDispasAtras = new Date(hoje.getTime() - 3 * 24 * 60 * 60 * 1000); // 3 dias atrás
+  
   await prisma.aviso.create({
     data: {
       titulo: 'Bem-vindos ao ano lectivo 2025',
       conteudo: 'A direcção da escola dá as boas-vindas a todos os estudantes, professores e encarregados de educação para o ano lectivo 2025.',
       destinatarios: DestinatarioAviso.TODOS,
-      data_publicacao: new Date(),
+      data_publicacao: hoje,
       prioridade: PrioridadeAviso.ALTA,
       professor_id: admin.id_usuario,
     },
   });
-  console.log('✅  Aviso criado');
+
+  await prisma.aviso.create({
+    data: {
+      titulo: 'Reunião de Pais e Encarregados',
+      conteudo: 'Informamos que está marcada a reunião trimestral de pais e encarregados de educação para o próximo sábado às 10:00.',
+      destinatarios: DestinatarioAviso.TODOS,
+      data_publicacao: ontemMeia,
+      prioridade: PrioridadeAviso.MEDIA,
+      professor_id: admin.id_usuario,
+    },
+  });
+
+  await prisma.aviso.create({
+    data: {
+      titulo: 'Resultados Parciais Disponíveis',
+      conteudo: 'Os resultados parciais do primeiro trimestre estão disponíveis no portal. Aceda para consultar as notas.',
+      destinatarios: DestinatarioAviso.ESTUDANTES,
+      data_publicacao: tresDispasAtras,
+      prioridade: PrioridadeAviso.ALTA,
+      professor_id: professor.usuario_id,
+    },
+  });
+
+  console.log('✅  Avisos criados');
 
   console.log('\n🎉  Seed concluído com sucesso!\n');
   console.log('─────────────────────────────────────────');
   console.log('  Credenciais de acesso:');
-  console.log('  Admin:      admin@escola.ao       / admin123');
-  console.log('  Secretaria: secretaria@escola.ao  / sec123');
-  console.log('  Professor:  prof.silva@escola.ao  / prof123');
+  console.log('  Admin:      admin@escola.ao            / admin123');
+  console.log('  Secretaria: secretaria@escola.ao       / sec123');
+  console.log('  Professor:  prof.silva@escola.ao       / prof123');
+  console.log('  Estudante:  maria.ferreira@escola.ao   / aluno123');
   console.log('─────────────────────────────────────────\n');
 }
 

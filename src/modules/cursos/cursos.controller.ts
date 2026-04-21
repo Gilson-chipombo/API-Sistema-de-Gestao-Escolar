@@ -26,6 +26,12 @@ export class CursosController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) { return this.service.findOne(id); }
 
+  @Get(':id/disciplinas')
+  @ApiOperation({ summary: 'Listar disciplinas de um curso' })
+  getDisciplinas(@Param('id', ParseIntPipe) id: number) {
+    return this.service.getDisciplinas(id);
+  }
+
   @Put(':id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')

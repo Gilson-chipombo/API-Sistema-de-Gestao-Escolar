@@ -104,6 +104,37 @@ export class CursosService {
     return curso;
   }
 
+  /**
+   * Buscar todas as disciplinas de um curso
+   */
+  async getDisciplinas(cursoId: number) {
+    const curso = await this.prisma.curso.findUnique({
+      where: { id_curso: cursoId },
+      include: {
+        disciplinas: {
+          include: {
+            disciplina: {
+              select: {
+                id_disc: true,
+                sigla_disc: true,
+                descricao_disc: true
+              }
+            }
+          },
+          orderBy: { ordem: 'asc' }
+        }
+      }
+    });
+
+    if (!curso) throw new NotFoundException(`Curso #${cursoId} não encontrado.`);
+
+    // Retornar só as disciplinas (formato simplificado)
+    return curso.disciplinas.map(cd => ({
+      ...cd.disciplina,
+      ordem: cd.ordem
+    }));
+  }
+
   async remove(id: number) {
     await this.findOne(id);
     return this.prisma.curso.delete({ where: { id_curso: id } });
