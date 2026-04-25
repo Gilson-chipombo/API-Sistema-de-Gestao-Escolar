@@ -77,6 +77,8 @@ export class TurmasController {
       throw error;
     }
   }
+
+  @Put(':id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'SECRETARIA')
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTurmaDto) {
