@@ -74,6 +74,10 @@ export class UsuariosService {
 
     const updateData: any = {};
 
+    if (dto.user_name) {
+      updateData.user_name = dto.user_name;
+    }
+
     if (dto.email) {
       const emailExists = await this.prisma.usuario.findUnique({ where: { email: dto.email } });
       if (emailExists && emailExists.id_usuario !== id) {
