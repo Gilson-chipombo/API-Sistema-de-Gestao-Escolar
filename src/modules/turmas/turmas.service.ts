@@ -49,7 +49,16 @@ export class TurmasService {
       const turma = await this.prisma.turma.findUnique({
         where: { id_turma: id },
         include: {
-          curso: true,
+          curso: {
+            include: {
+              disciplinas: {
+                include: {
+                  disciplina: true,
+                },
+                orderBy: { ordem: 'asc' },
+              },
+            },
+          },
           diretor: true,
           estudantes: { orderBy: { nome_estudante: 'asc' } },
         },
