@@ -256,7 +256,7 @@ export class NotasService {
         conteudo,
         destinatarios: 'TODOS' as any,
         data_publicacao: new Date(),
-        prioridade: 'MEDIA' as any,
+        prioridade: 'ALTA' as any,
       };
 
       console.log('[NOTAS-SERVICE] Criando aviso de atualização:', avisoDto);
