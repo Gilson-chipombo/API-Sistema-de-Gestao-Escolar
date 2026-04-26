@@ -142,11 +142,15 @@ export class NotasService {
         trimestre_nota: dto.trimestre_nota,
         ano_letivo: dto.ano_letivo,
       },
+      include: { estudante: true, disciplina: true, turma: true },
     });
 
     if (notaExistente) {
-      // Atualizar nota existente (sem criar aviso)
-      return this.prisma.nota.update({
+      // Nota antiga (antes de atualizar)
+      const notaAntiga = notaExistente;
+
+      // Atualizar nota existente
+      const notaNova = await this.prisma.nota.update({
         where: { id_nota: notaExistente.id_nota },
         data: {
           mac_notas: dto.mac_notas,
@@ -158,6 +162,18 @@ export class NotasService {
         },
         include: { estudante: true, disciplina: true, turma: true },
       });
+
+      // Criar aviso de atualização (comparando notas antigas e novas)
+      try {
+        console.log('[NOTAS-SERVICE] Iniciando criação de aviso de atualização via UPSERT...');
+        await this.criarAvisoNotaAtualizada(notaAntiga, notaNova);
+        console.log('[NOTAS-SERVICE] Aviso de atualização criado com sucesso!');
+      } catch (erro) {
+        console.error('[NOTAS-SERVICE] Erro ao criar aviso de atualização de nota:', erro);
+        // Não interromper a atualização se o aviso falhar
+      }
+
+      return notaNova;
     } else {
       // Criar nova nota
       const nota = await this.prisma.nota.create({
@@ -167,7 +183,9 @@ export class NotasService {
 
       // Criar aviso para ADMIN quando nota é lançada
       try {
+        console.log('[NOTAS-SERVICE] Iniciando criação de aviso de nova nota via UPSERT...');
         await this.criarAvisoNota(nota);
+        console.log('[NOTAS-SERVICE] Aviso de nova nota criado com sucesso!');
       } catch (erro) {
         console.error('[NOTAS-SERVICE] Erro ao criar aviso de nota:', erro);
         // Não interromper a criação da nota se o aviso falhar
