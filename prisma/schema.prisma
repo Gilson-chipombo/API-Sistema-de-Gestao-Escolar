@@ -7,22 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────
-// TB Usuários
-// ─────────────────────────────────────────────
-enum PerfilUsuario {
-  ADMIN
-  PROFESSOR
-  ESTUDANTE
-  SECRETARIA
-}
-
-enum StatusUsuario {
-  ATIVO
-  INATIVO
-  SUSPENSO
-}
-
 model Usuario {
   id_usuario Int           @id @default(autoincrement())
   user_name  String
@@ -32,76 +16,49 @@ model Usuario {
   status     StatusUsuario
   created_at DateTime      @default(now())
   deleted_at DateTime?
-
-  professor Professor?
-  avisos    Aviso[]
-}
-
-// ─────────────────────────────────────────────
-// TB Professor
-// ─────────────────────────────────────────────
-enum NivelAcademico {
-  LICENCIATURA
-  MESTRADO
-  DOUTORAMENTO
-  BACHARELATO
-  OUTRO
-}
-
-enum StatusProfessor {
-  ATIVO
-  INATIVO
-  LICENCA
+  avisos     Aviso[]
+  professor  Professor?
 }
 
 model Professor {
-  id_prof                   Int             @id @default(autoincrement())
-  nome_prof                 String
-  filiacao_prof             String?
-  data_nascimento_prof      DateTime        @db.Date
-  email_prof                String?
-  telefone_prof             String
-  numero_bi_prof            String          @unique
-  data_emissao_bi_prof      DateTime        @db.Date
-  nacionalidade_prof        String?
-  endereco_fisico_prof      String
-  naturalidade_prof         String
-  nivel_academico           NivelAcademico
-  area_formacao_prof        String
-  ano_conclusao_formacao    Int?
-  data_admissao             DateTime?       @db.Date
-  status                    StatusProfessor
-  created_at                DateTime        @default(now())
-  updated_at                DateTime        @updatedAt
-
-  usuario_id  Int?      @unique
-  usuario     Usuario?  @relation(fields: [usuario_id], references: [id_usuario])
-
-  turmas_dirigidas Turma[]
-  disciplinas      ProfessorDisciplina[]
-  turmas           ProfessorTurma[]
+  id_prof                Int                   @id @default(autoincrement())
+  nome_prof              String
+  filiacao_prof          String?
+  data_nascimento_prof   DateTime              @db.Date
+  email_prof             String?
+  telefone_prof          String
+  numero_bi_prof         String                @unique
+  data_emissao_bi_prof   DateTime              @db.Date
+  nacionalidade_prof     String?
+  endereco_fisico_prof   String
+  naturalidade_prof      String
+  nivel_academico        NivelAcademico
+  area_formacao_prof     String
+  ano_conclusao_formacao Int?
+  data_admissao          DateTime?             @db.Date
+  status                 StatusProfessor
+  created_at             DateTime              @default(now())
+  updated_at             DateTime              @updatedAt
+  usuario_id             Int?                  @unique
+  usuario                Usuario?              @relation(fields: [usuario_id], references: [id_usuario])
+  disciplinas            ProfessorDisciplina[]
+  turmas                 ProfessorTurma[]
+  turmas_dirigidas       Turma[]
 }
 
-// ─────────────────────────────────────────────
-// TB Curso
-// ─────────────────────────────────────────────
 model Curso {
-  id_curso        Int      @id @default(autoincrement())
-  sigla_curso     String   @unique
-  descricao_curso String
-  duracao_semestres Int?   // Duração em semestres
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-
-  turmas        Turma[]
-  disciplinas   CursoDisciplina[]
+  id_curso          Int               @id @default(autoincrement())
+  sigla_curso       String            @unique
+  descricao_curso   String
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
+  duracao_semestres Int?
+  disciplinas       CursoDisciplina[]
+  turmas            Turma[]
 }
 
-// ─────────────────────────────────────────────
-// TB Turma
-// ─────────────────────────────────────────────
 model Turma {
-  id_turma           Int      @id @default(autoincrement())
+  id_turma           Int              @id @default(autoincrement())
   sigla_turma        String
   ano_lectivo_turma  Int
   turno_turma        String
@@ -109,28 +66,16 @@ model Turma {
   sala_turma         String
   numero_aluno_turma Int?
   observacoes_turma  String?
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
-
-  curso_id      Int?
-  curso         Curso?    @relation(fields: [curso_id], references: [id_curso])
-  diretor_turma Int
-  diretor       Professor @relation(fields: [diretor_turma], references: [id_prof])
-
-  estudantes Estudante[]
-  notas      Nota[]
-  faltas     Falta[]
-  professores ProfessorTurma[]
-}
-
-// ─────────────────────────────────────────────
-// TB Estudante
-// ─────────────────────────────────────────────
-enum StatusEstudante {
-  ATIVO
-  INATIVO
-  TRANSFERIDO
-  CONCLUIDO
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @updatedAt
+  curso_id           Int?
+  diretor_turma      Int
+  estudantes         Estudante[]
+  faltas             Falta[]
+  notas              Nota[]
+  professores        ProfessorTurma[]
+  curso              Curso?           @relation(fields: [curso_id], references: [id_curso])
+  diretor            Professor        @relation(fields: [diretor_turma], references: [id_prof])
 }
 
 model Estudante {
@@ -148,109 +93,69 @@ model Estudante {
   status                    StatusEstudante
   created_at                DateTime        @default(now())
   updated_at                DateTime        @updatedAt
-
-  turma_id Int?
-  turma    Turma? @relation(fields: [turma_id], references: [id_turma])
-
-  notas  Nota[]
-  faltas Falta[]
+  turma_id                  Int?
+  turma                     Turma?          @relation(fields: [turma_id], references: [id_turma])
+  faltas                    Falta[]
+  notas                     Nota[]
 }
 
-// ─────────────────────────────────────────────
-// TB Disciplina
-// ─────────────────────────────────────────────
 model Disciplina {
-  id_disc      Int      @id @default(autoincrement())
-  sigla_disc   String   @unique
+  id_disc        Int                   @id @default(autoincrement())
+  sigla_disc     String                @unique
   descricao_disc String
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-
-  notas       Nota[]
-  faltas      Falta[]
-  professores ProfessorDisciplina[]
-  cursos      CursoDisciplina[]
+  created_at     DateTime              @default(now())
+  updated_at     DateTime              @updatedAt
+  cursos         CursoDisciplina[]
+  faltas         Falta[]
+  notas          Nota[]
+  professores    ProfessorDisciplina[]
 }
 
-// ─────────────────────────────────────────────
-// TB Relacionamento: Curso-Disciplina (N:N)
-// ─────────────────────────────────────────────
 model CursoDisciplina {
-  id                Int      @id @default(autoincrement())
-  curso_id          Int
-  disciplina_id     Int
-  ordem             Int?     // Ordem da disciplina no curso
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
-
-  curso      Curso      @relation(fields: [curso_id], references: [id_curso], onDelete: Cascade)
-  disciplina Disciplina @relation(fields: [disciplina_id], references: [id_disc], onDelete: Cascade)
+  id            Int        @id @default(autoincrement())
+  curso_id      Int
+  disciplina_id Int
+  ordem         Int?
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  curso         Curso      @relation(fields: [curso_id], references: [id_curso], onDelete: Cascade)
+  disciplina    Disciplina @relation(fields: [disciplina_id], references: [id_disc], onDelete: Cascade)
 
   @@unique([curso_id, disciplina_id])
 }
 
-// ─────────────────────────────────────────────
-// TB Nota
-// ─────────────────────────────────────────────
 model Nota {
-  id_nota       Int      @id @default(autoincrement())
-  trimestre_nota Decimal? @db.Decimal(5, 2)
-  data_nota     DateTime? @db.Date
-  mac_notas     Decimal?  @db.Decimal(5, 2)
-  pp_notas      Decimal?  @db.Decimal(5, 2)
-  pt_notas      Decimal?  @db.Decimal(5, 2)
-  ano_letivo    Int?
-  observacao    String?
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-
-  estudante_id  Int
-  estudante     Estudante  @relation(fields: [estudante_id], references: [id_estudante])
-  disciplina_id Int
-  disciplina    Disciplina @relation(fields: [disciplina_id], references: [id_disc])
-  turma_id      Int
-  turma         Turma      @relation(fields: [turma_id], references: [id_turma])
-}
-
-// ─────────────────────────────────────────────
-// TB Falta
-// ─────────────────────────────────────────────
-enum TipoFalta {
-  JUSTIFICADA
-  INJUSTIFICADA
+  id_nota        Int        @id @default(autoincrement())
+  trimestre_nota Decimal?   @db.Decimal(5, 2)
+  data_nota      DateTime?  @db.Date
+  mac_notas      Decimal?   @db.Decimal(5, 2)
+  pp_notas       Decimal?   @db.Decimal(5, 2)
+  pt_notas       Decimal?   @db.Decimal(5, 2)
+  ano_letivo     Int?
+  observacao     String?
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @updatedAt
+  estudante_id   Int
+  disciplina_id  Int
+  turma_id       Int
+  disciplina     Disciplina @relation(fields: [disciplina_id], references: [id_disc], onDelete: Cascade)
+  estudante      Estudante  @relation(fields: [estudante_id], references: [id_estudante], onDelete: Cascade)
+  turma          Turma      @relation(fields: [turma_id], references: [id_turma], onDelete: Cascade)
 }
 
 model Falta {
-  id_falta     Int       @id @default(autoincrement())
-  data_falta   DateTime  @db.Date
-  tipo_falta   TipoFalta
-  observacao   String?
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
-
+  id_falta      Int        @id @default(autoincrement())
+  data_falta    DateTime   @db.Date
+  tipo_falta    TipoFalta
+  observacao    String?
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
   estudante_id  Int
-  estudante     Estudante  @relation(fields: [estudante_id], references: [id_estudante])
   disciplina_id Int
-  disciplina    Disciplina @relation(fields: [disciplina_id], references: [id_disc])
   turma_id      Int
-  turma         Turma      @relation(fields: [turma_id], references: [id_turma])
-}
-
-// ─────────────────────────────────────────────
-// TB Aviso
-// ─────────────────────────────────────────────
-enum DestinatarioAviso {
-  TODOS
-  PROFESSORES
-  ESTUDANTES
-  PAIS
-}
-
-enum PrioridadeAviso {
-  BAIXA
-  MEDIA
-  ALTA
-  URGENTE
+  disciplina    Disciplina @relation(fields: [disciplina_id], references: [id_disc], onDelete: Cascade)
+  estudante     Estudante  @relation(fields: [estudante_id], references: [id_estudante], onDelete: Cascade)
+  turma         Turma      @relation(fields: [turma_id], references: [id_turma], onDelete: Cascade)
 }
 
 model Aviso {
@@ -263,41 +168,81 @@ model Aviso {
   prioridade      PrioridadeAviso
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
-
-  professor_id Int?
-  professor    Usuario? @relation(fields: [professor_id], references: [id_usuario])
+  professor_id    Int?
+  professor       Usuario?          @relation(fields: [professor_id], references: [id_usuario])
 }
 
-// ─────────────────────────────────────────────
-// TB ProfessorDisciplina (Many-to-Many)
-// ─────────────────────────────────────────────
 model ProfessorDisciplina {
-  id Int @id @default(autoincrement())
-
-  professor_id Int
-  professor    Professor  @relation(fields: [professor_id], references: [id_prof], onDelete: Cascade)
-
+  id            Int        @id @default(autoincrement())
+  professor_id  Int
   disciplina_id Int
+  created_at    DateTime   @default(now())
   disciplina    Disciplina @relation(fields: [disciplina_id], references: [id_disc], onDelete: Cascade)
-
-  created_at DateTime @default(now())
+  professor     Professor  @relation(fields: [professor_id], references: [id_prof], onDelete: Cascade)
 
   @@unique([professor_id, disciplina_id])
 }
 
-// ─────────────────────────────────────────────
-// TB ProfessorTurma (Many-to-Many)
-// ─────────────────────────────────────────────
 model ProfessorTurma {
-  id Int @id @default(autoincrement())
-
+  id           Int       @id @default(autoincrement())
   professor_id Int
+  turma_id     Int
+  created_at   DateTime  @default(now())
   professor    Professor @relation(fields: [professor_id], references: [id_prof], onDelete: Cascade)
-
-  turma_id Int
-  turma    Turma @relation(fields: [turma_id], references: [id_turma], onDelete: Cascade)
-
-  created_at DateTime @default(now())
+  turma        Turma     @relation(fields: [turma_id], references: [id_turma], onDelete: Cascade)
 
   @@unique([professor_id, turma_id])
+}
+
+enum PerfilUsuario {
+  ADMIN
+  PROFESSOR
+  ESTUDANTE
+  SECRETARIA
+}
+
+enum StatusUsuario {
+  ATIVO
+  INATIVO
+  SUSPENSO
+}
+
+enum NivelAcademico {
+  LICENCIATURA
+  MESTRADO
+  DOUTORAMENTO
+  BACHARELATO
+  OUTRO
+}
+
+enum StatusProfessor {
+  ATIVO
+  INATIVO
+  LICENCA
+}
+
+enum StatusEstudante {
+  ATIVO
+  INATIVO
+  TRANSFERIDO
+  CONCLUIDO
+}
+
+enum TipoFalta {
+  JUSTIFICADA
+  INJUSTIFICADA
+}
+
+enum DestinatarioAviso {
+  TODOS
+  PROFESSORES
+  ESTUDANTES
+  PAIS
+}
+
+enum PrioridadeAviso {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
 }

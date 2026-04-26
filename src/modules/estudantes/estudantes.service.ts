@@ -125,14 +125,28 @@ export class EstudantesService {
   }
 
   async remove(id: number) {
-    this.logger.debug(`[SERVICE-REMOVE] Marcando estudante como inativo ID: ${id}`);
+    this.logger.debug(`[SERVICE-REMOVE] Deletando estudante ID: ${id}`);
     await this.findOne(id);
-    return this.prisma.estudante.update({
+    
+    // Deletar todas as notas do estudante
+    await this.prisma.nota.deleteMany({
+      where: { estudante_id: id }
+    });
+    
+    // Deletar todas as faltas do estudante
+    await this.prisma.falta.deleteMany({
+      where: { estudante_id: id }
+    });
+    
+    // Deletar o estudante
+    const deletedEstudante = await this.prisma.estudante.delete({
       where: { id_estudante: id },
-      data: { status: 'INATIVO' },
       include: {
         turma: { include: { curso: true } }
       }
     });
+    
+    this.logger.log(`[SERVICE-REMOVE] Estudante deletado com sucesso: ID ${id}`);
+    return deletedEstudante;
   }
 }
