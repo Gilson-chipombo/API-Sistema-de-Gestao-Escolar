@@ -13,8 +13,8 @@ export class NotasService {
     });
   }
 
-  findAll(estudanteId?: number, disciplinaId?: number, turmaId?: number, anoLetivo?: number) {
-    return this.prisma.nota.findMany({
+  async findAll(estudanteId?: number, disciplinaId?: number, turmaId?: number, anoLetivo?: number) {
+    const notas = await this.prisma.nota.findMany({
       where: {
         ...(estudanteId && { estudante_id: estudanteId }),
         ...(disciplinaId && { disciplina_id: disciplinaId }),
@@ -23,11 +23,31 @@ export class NotasService {
       },
       include: {
         estudante: { select: { nome_estudante: true, id_estudante: true } },
-        disciplina: { select: { sigla_disc: true, descricao_disc: true } },
-        turma: { select: { sigla_turma: true, classe_turma: true } },
+        disciplina: { select: { sigla_disc: true, descricao_disc: true, id_disc: true } },
+        turma: { select: { sigla_turma: true, classe_turma: true, id_turma: true } },
       },
       orderBy: [{ estudante: { nome_estudante: 'asc' } }, { trimestre_nota: 'asc' }],
     });
+
+    // Para cada nota, buscar o professor que leciona essa disciplina nessa turma
+    const notasComProfessor = await Promise.all(
+      notas.map(async (nota) => {
+        const professor = await this.prisma.professor.findFirst({
+          where: {
+            disciplinas: { some: { disciplina_id: nota.disciplina_id } },
+            turmas: { some: { turma_id: nota.turma_id } },
+          },
+          select: { id_prof: true, nome_prof: true },
+        });
+
+        return {
+          ...nota,
+          professor: professor ? { id_prof: professor.id_prof, nome_prof: professor.nome_prof } : null,
+        };
+      }),
+    );
+
+    return notasComProfessor;
   }
 
   async findOne(id: number) {
