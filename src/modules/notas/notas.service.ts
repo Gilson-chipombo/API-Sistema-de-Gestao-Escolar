@@ -1,16 +1,30 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AvisosService } from '../avisos/avisos.service';
 import { CreateNotaDto, UpdateNotaDto } from './dto/nota.dto';
 
 @Injectable()
 export class NotasService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private avisosService: AvisosService,
+  ) {}
 
-  create(dto: CreateNotaDto) {
-    return this.prisma.nota.create({
+  async create(dto: CreateNotaDto) {
+    const nota = await this.prisma.nota.create({
       data: dto,
       include: { estudante: true, disciplina: true, turma: true },
     });
+
+    // Criar aviso para ADMIN quando nota é lançada
+    try {
+      await this.criarAvisoNota(nota);
+    } catch (erro) {
+      console.error('[NOTAS-SERVICE] Erro ao criar aviso de nota:', erro);
+      // Não interromper a criação da nota se o aviso falhar
+    }
+
+    return nota;
   }
 
   async findAll(estudanteId?: number, disciplinaId?: number, turmaId?: number, anoLetivo?: number) {
@@ -100,7 +114,7 @@ export class NotasService {
     });
 
     if (notaExistente) {
-      // Atualizar nota existente
+      // Atualizar nota existente (sem criar aviso)
       return this.prisma.nota.update({
         where: { id_nota: notaExistente.id_nota },
         data: {
@@ -115,10 +129,50 @@ export class NotasService {
       });
     } else {
       // Criar nova nota
-      return this.prisma.nota.create({
+      const nota = await this.prisma.nota.create({
         data: dto,
         include: { estudante: true, disciplina: true, turma: true },
       });
+
+      // Criar aviso para ADMIN quando nota é lançada
+      try {
+        await this.criarAvisoNota(nota);
+      } catch (erro) {
+        console.error('[NOTAS-SERVICE] Erro ao criar aviso de nota:', erro);
+        // Não interromper a criação da nota se o aviso falhar
+      }
+
+      return nota;
     }
+  }
+
+  // ========== CRIAR AVISO DE NOTA ==========
+  private async criarAvisoNota(nota: any) {
+    const disciplina = nota.disciplina?.descricao_disc || nota.disciplina?.sigla_disc || 'Disciplina';
+    const estudante = nota.estudante?.nome_estudante || 'Aluno';
+    const turma = nota.turma?.sigla_turma || 'Turma';
+    
+    const titulo = `Nova Nota Lançada: ${disciplina}`;
+    const conteudo = `Uma nova nota foi lançada para ${estudante} em ${disciplina} na turma ${turma}.\n\nNotas: MAC: ${nota.mac_notas || '-'}, PP: ${nota.pp_notas || '-'}, PT: ${nota.pt_notas || '-'}`;
+
+    await this.avisosService.create({
+      titulo,
+      conteudo,
+      destinatarios: 'TODOS',
+      data_publicacao: new Date(),
+      prioridade: 'ALTA',
+      professor_id: undefined,
+    } as any);
+  }
+
+  // ========== AVISOS DE NOTAS LANÇADAS ==========
+  async avisosNotasLancadas() {
+    return this.prisma.aviso.findMany({
+      where: {
+        titulo: { contains: 'Nova Nota Lançada' },
+      },
+      include: { professor: { select: { user_name: true } } },
+      orderBy: { data_publicacao: 'desc' },
+    });
   }
 }

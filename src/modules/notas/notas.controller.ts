@@ -62,6 +62,14 @@ export class NotasController {
     return this.service.boletim(estudanteId, anoLetivo);
   }
 
+  @Get('avisos/notas-lancadas')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Avisos de notas lançadas (somente ADMIN)' })
+  avisosNotasLancadas() {
+    return this.service.avisosNotasLancadas();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
