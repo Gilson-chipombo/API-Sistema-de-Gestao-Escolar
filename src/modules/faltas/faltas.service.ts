@@ -6,21 +6,55 @@ import { CreateFaltaDto, UpdateFaltaDto } from './dto/falta.dto';
 export class FaltasService {
   constructor(private prisma: PrismaService) {}
 
-  create(dto: CreateFaltaDto) {
-    return this.prisma.falta.create({
-      data: dto,
-      include: { estudante: true, disciplina: true },
-    });
+  async create(dto: CreateFaltaDto) {
+    console.log('[FaltasService] Recebido CreateFaltaDto:', JSON.stringify(dto, null, 2));
+    
+    try {
+      // Validação de campos obrigatórios
+      if (!dto.estudante_id || !dto.disciplina_id || !dto.turma_id || !dto.data_falta || !dto.tipo_falta) {
+        throw new Error(`Dados incompletos: ${JSON.stringify(dto)}`);
+      }
+
+      console.log('[FaltasService] Tentando criar falta com dados:', {
+        estudante_id: dto.estudante_id,
+        disciplina_id: dto.disciplina_id,
+        turma_id: dto.turma_id,
+        data_falta: dto.data_falta,
+        tipo_falta: dto.tipo_falta
+      });
+
+      const falta = await this.prisma.falta.create({
+        data: dto,
+        include: { estudante: true, disciplina: true },
+      });
+
+      console.log('[FaltasService] ✓ Falta criada com sucesso:', falta.id_falta);
+      return falta;
+    } catch (error) {
+      console.error('[FaltasService] ✗ Erro ao criar falta:', error);
+      throw error;
+    }
   }
 
   findAll(estudanteId?: number, disciplinaId?: number, turmaId?: number, tipo?: string) {
-    return this.prisma.falta.findMany({
-      where: {
-        ...(estudanteId && { estudante_id: estudanteId }),
-        ...(disciplinaId && { disciplina_id: disciplinaId }),
-        ...(turmaId && { turma_id: turmaId }),
-        ...(tipo && { tipo_falta: tipo as any }),
-      },
+    console.log('[FaltasService] findAll chamado com:', {
+      estudanteId,
+      disciplinaId,
+      turmaId,
+      tipo
+    });
+
+    const where = {
+      ...(estudanteId && { estudante_id: estudanteId }),
+      ...(disciplinaId && { disciplina_id: disciplinaId }),
+      ...(turmaId && { turma_id: turmaId }),
+      ...(tipo && { tipo_falta: tipo as any }),
+    };
+
+    console.log('[FaltasService] Where clause:', where);
+
+    const promise = this.prisma.falta.findMany({
+      where,
       include: {
         estudante: { select: { nome_estudante: true, id_estudante: true } },
         disciplina: { select: { sigla_disc: true, descricao_disc: true } },
@@ -28,6 +62,17 @@ export class FaltasService {
       },
       orderBy: [{ data_falta: 'desc' }],
     });
+
+    promise.then((faltas) => {
+      console.log('[FaltasService] ✓ Faltas encontradas:', faltas.length);
+      if (faltas.length > 0) {
+        console.log('[FaltasService] Primeira falta:', faltas[0]);
+      }
+    }).catch((erro) => {
+      console.error('[FaltasService] ✗ Erro ao buscar faltas:', erro);
+    });
+
+    return promise;
   }
 
   async findOne(id: number) {

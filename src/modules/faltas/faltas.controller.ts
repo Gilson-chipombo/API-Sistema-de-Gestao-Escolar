@@ -21,7 +21,15 @@ export class FaltasController {
   @Roles('ADMIN', 'PROFESSOR', 'SECRETARIA')
   @ApiOperation({ summary: 'Registar falta' })
   create(@Body() dto: CreateFaltaDto) {
-    return this.service.create(dto);
+    console.log('[FaltasController] POST /faltas recebido com body:', JSON.stringify(dto, null, 2));
+    try {
+      const resultado = this.service.create(dto);
+      console.log('[FaltasController] ✓ Resultado do serviço:', resultado);
+      return resultado;
+    } catch (error) {
+      console.error('[FaltasController] ✗ Erro ao criar falta:', error);
+      throw error;
+    }
   }
 
   @Get()
