@@ -208,12 +208,12 @@ export class NotasService {
       const avisoDto: CreateAvisoDto = {
         titulo,
         conteudo,
-        destinatarios: 'TODOS' as any,
+        destinatarios: 'ADMIN' as any,
         data_publicacao: new Date(),
         prioridade: 'ALTA' as any,
       };
 
-      console.log('[NOTAS-SERVICE] Criando aviso de nova nota:', avisoDto);
+      console.log('[NOTAS-SERVICE] Criando aviso de nova nota para ADMIN:', avisoDto);
 
       const result = await this.avisosService.create(avisoDto);
       console.log('[NOTAS-SERVICE] Aviso de nova nota criado com sucesso! ID:', result.id);
@@ -254,12 +254,12 @@ export class NotasService {
       const avisoDto: CreateAvisoDto = {
         titulo,
         conteudo,
-        destinatarios: 'TODOS' as any,
+        destinatarios: 'ADMIN' as any,
         data_publicacao: new Date(),
         prioridade: 'ALTA' as any,
       };
 
-      console.log('[NOTAS-SERVICE] Criando aviso de atualização:', avisoDto);
+      console.log('[NOTAS-SERVICE] Criando aviso de atualização para ADMIN:', avisoDto);
 
       const result = await this.avisosService.create(avisoDto);
       console.log('[NOTAS-SERVICE] Aviso de atualização criado com sucesso! ID:', result.id);

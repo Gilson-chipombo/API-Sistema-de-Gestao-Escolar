@@ -63,12 +63,13 @@ export class EstudantesController {
     return this.service.findOne(id);
   }
 
-  @Get('usuario/:usuarioId')
-  @ApiOperation({ summary: 'Obter estudante pelo ID do usuário' })
-  async findByUsuario(@Param('usuarioId', ParseIntPipe) usuarioId: number) {
-    this.logger.log(`[FINDBYUSUARIO] Buscando estudante para usuarioId: ${usuarioId}`);
-    return this.service.findByUsuarioId(usuarioId);
-  }
+  // NOTA: Este endpoint foi desativado porque Estudante não tem relação direta com Usuario
+  // @Get('usuario/:usuarioId')
+  // @ApiOperation({ summary: 'Obter estudante pelo ID do usuário' })
+  // async findByUsuario(@Param('usuarioId', ParseIntPipe) usuarioId: number) {
+  //   this.logger.log(`[FINDBYUSUARIO] Buscando estudante para usuarioId: ${usuarioId}`);
+  //   return this.service.findByUsuarioId(usuarioId);
+  // }
 
   @Put(':id')
   @UseGuards(RolesGuard)

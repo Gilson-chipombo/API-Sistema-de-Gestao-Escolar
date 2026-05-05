@@ -235,6 +235,7 @@ enum TipoFalta {
 
 enum DestinatarioAviso {
   TODOS
+  ADMIN
   PROFESSORES
   ESTUDANTES
   PAIS

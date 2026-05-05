@@ -112,22 +112,8 @@ export class EstudantesService {
     return est;
   }
 
-  async findByUsuarioId(usuarioId: number) {
-    this.logger.log(`[SERVICE-FINDBYUSUARIOID] Buscando estudante para usuarioId: ${usuarioId}`);
-    const est = await this.prisma.estudante.findFirst({
-      where: { usuario_id: usuarioId },
-      include: {
-        turma: { include: { curso: true } },
-        usuario: true,
-      },
-    });
-    if (!est) {
-      this.logger.warn(`[SERVICE-FINDBYUSUARIOID] Nenhum estudante encontrado para usuarioId: ${usuarioId}`);
-      throw new NotFoundException(`Estudante não encontrado para usuário #${usuarioId}`);
-    }
-    this.logger.log(`[SERVICE-FINDBYUSUARIOID] Estudante encontrado: ${est.id_estudante}`);
-    return est;
-  }
+  // Nota: Este método foi removido porque Estudante não tem relação direta com Usuario no schema
+  // Para buscar estudantes, use o ID direto ou implemente uma relação no banco de dados
 
   async update(id: number, dto: UpdateEstudanteDto) {
     this.logger.debug(`[SERVICE-UPDATE] Atualizando estudante ID: ${id}`);
