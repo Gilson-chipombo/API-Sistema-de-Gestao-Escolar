@@ -112,6 +112,23 @@ export class EstudantesService {
     return est;
   }
 
+  async findByUsuarioId(usuarioId: number) {
+    this.logger.log(`[SERVICE-FINDBYUSUARIOID] Buscando estudante para usuarioId: ${usuarioId}`);
+    const est = await this.prisma.estudante.findFirst({
+      where: { usuario_id: usuarioId },
+      include: {
+        turma: { include: { curso: true } },
+        usuario: true,
+      },
+    });
+    if (!est) {
+      this.logger.warn(`[SERVICE-FINDBYUSUARIOID] Nenhum estudante encontrado para usuarioId: ${usuarioId}`);
+      throw new NotFoundException(`Estudante não encontrado para usuário #${usuarioId}`);
+    }
+    this.logger.log(`[SERVICE-FINDBYUSUARIOID] Estudante encontrado: ${est.id_estudante}`);
+    return est;
+  }
+
   async update(id: number, dto: UpdateEstudanteDto) {
     this.logger.debug(`[SERVICE-UPDATE] Atualizando estudante ID: ${id}`);
     await this.findOne(id);

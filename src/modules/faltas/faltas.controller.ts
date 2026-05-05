@@ -17,8 +17,8 @@ export class FaltasController {
   constructor(private readonly service: FaltasService) {}
 
   @Post()
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN', 'PROFESSOR', 'SECRETARIA')
+  //@UseGuards(RolesGuard)
+  //@Roles('ADMIN', 'PROFESSOR', 'ESTUDANTE')
   @ApiOperation({ summary: 'Registar falta' })
   create(@Body() dto: CreateFaltaDto) {
     console.log('[FaltasController] POST /faltas recebido com body:', JSON.stringify(dto, null, 2));
