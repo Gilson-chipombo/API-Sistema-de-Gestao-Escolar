@@ -221,6 +221,7 @@ enum StatusProfessor {
   LICENCA
 }
 
+
 enum StatusEstudante {
   ATIVO
   INATIVO
