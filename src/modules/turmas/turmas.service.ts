@@ -29,7 +29,7 @@ export class TurmasService {
           ...(classe && { classe_turma: classe }),
         },
         include: {
-          curso: { select: { id_curso: true, sigla_curso: true, descricao_curso: true, duracao_semestres: true } },
+          classe: { select: { id_classe: true, sigla_classe: true, descricao_classe: true, duracao_semestres: true, nomeCurso: true, tipoEnsino: true } },
           diretor: { select: { id_prof: true, nome_prof: true } },
           _count: { select: { estudantes: true } },
         },
@@ -49,7 +49,7 @@ export class TurmasService {
       const turma = await this.prisma.turma.findUnique({
         where: { id_turma: id },
         include: {
-          curso: {
+          classe: {
             include: {
               disciplinas: {
                 include: {
@@ -87,7 +87,7 @@ export class TurmasService {
           ],
         },
         include: {
-          curso: { select: { id_curso: true, sigla_curso: true, descricao_curso: true } },
+          classe: { select: { id_classe: true, sigla_classe: true, descricao_classe: true, nomeCurso: true, tipoEnsino: true } },
           diretor: { select: { id_prof: true, nome_prof: true } },
           _count: { select: { estudantes: true } },
         },

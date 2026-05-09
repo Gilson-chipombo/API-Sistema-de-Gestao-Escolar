@@ -7,7 +7,7 @@ export class CreateTurmaDto {
   @ApiProperty({ example: 'Manhã' }) @IsString() turno_turma: string;
   @ApiProperty({ example: '10ª' }) @IsString() classe_turma: string;
   @ApiProperty({ example: 'Sala 5' }) @IsString() sala_turma: string;
-  @ApiPropertyOptional() @IsOptional() @IsInt() curso_id?: number;
+  @ApiPropertyOptional() @IsOptional() @IsInt() classe_id?: number;
   @ApiProperty({ description: 'ID do professor director de turma' }) @IsInt() diretor_turma: number;
   @ApiPropertyOptional() @IsOptional() @IsInt() numero_aluno_turma?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() observacoes_turma?: string;

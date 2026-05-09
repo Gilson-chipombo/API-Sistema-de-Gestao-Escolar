@@ -46,15 +46,19 @@ model Professor {
   turmas_dirigidas       Turma[]
 }
 
-model Curso {
-  id_curso          Int               @id @default(autoincrement())
-  sigla_curso       String            @unique
-  descricao_curso   String
-  created_at        DateTime          @default(now())
-  updated_at        DateTime          @updatedAt
-  duracao_semestres Int?
-  disciplinas       CursoDisciplina[]
-  turmas            Turma[]
+model Classe {
+  id_classe          Int               @id @default(autoincrement())
+  sigla_classe       String
+  descricao_classe   String
+  nomeCurso          String?
+  tipoEnsino         TipoEnsino
+  created_at         DateTime          @default(now())
+  updated_at         DateTime          @updatedAt
+  duracao_semestres  Int?
+  disciplinas        ClasseDisciplina[]
+  turmas             Turma[]
+
+  @@unique([sigla_classe, nomeCurso, tipoEnsino])
 }
 
 model Turma {
@@ -68,13 +72,13 @@ model Turma {
   observacoes_turma  String?
   created_at         DateTime         @default(now())
   updated_at         DateTime         @updatedAt
-  curso_id           Int?
+  classe_id          Int?
   diretor_turma      Int
   estudantes         Estudante[]
   faltas             Falta[]
   notas              Nota[]
   professores        ProfessorTurma[]
-  curso              Curso?           @relation(fields: [curso_id], references: [id_curso])
+  classe             Classe?          @relation(fields: [classe_id], references: [id_classe])
   diretor            Professor        @relation(fields: [diretor_turma], references: [id_prof])
 }
 
@@ -105,23 +109,23 @@ model Disciplina {
   descricao_disc String
   created_at     DateTime              @default(now())
   updated_at     DateTime              @updatedAt
-  cursos         CursoDisciplina[]
+  classes        ClasseDisciplina[]
   faltas         Falta[]
   notas          Nota[]
   professores    ProfessorDisciplina[]
 }
 
-model CursoDisciplina {
+model ClasseDisciplina {
   id            Int        @id @default(autoincrement())
-  curso_id      Int
+  classe_id     Int
   disciplina_id Int
   ordem         Int?
   created_at    DateTime   @default(now())
   updated_at    DateTime   @updatedAt
-  curso         Curso      @relation(fields: [curso_id], references: [id_curso], onDelete: Cascade)
+  classe        Classe     @relation(fields: [classe_id], references: [id_classe], onDelete: Cascade)
   disciplina    Disciplina @relation(fields: [disciplina_id], references: [id_disc], onDelete: Cascade)
 
-  @@unique([curso_id, disciplina_id])
+  @@unique([classe_id, disciplina_id])
 }
 
 model Nota {
@@ -247,4 +251,9 @@ enum PrioridadeAviso {
   MEDIA
   ALTA
   URGENTE
+}
+
+enum TipoEnsino {
+  SECUNDARIO
+  MEDIO
 }

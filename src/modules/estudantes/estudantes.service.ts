@@ -25,7 +25,7 @@ export class EstudantesService {
     return this.prisma.estudante.create({ 
       data: data as any,
       include: {
-        turma: { include: { curso: true } }
+        turma: { include: { classe: true } }
       }
     });
   }
@@ -73,7 +73,7 @@ export class EstudantesService {
     const estudante = await this.prisma.estudante.create({
       data: estudanteData as any,
       include: {
-        turma: { include: { curso: true } }
+        turma: { include: { classe: true } }
       }
     });
 
@@ -91,7 +91,7 @@ export class EstudantesService {
       },
       include: { 
         turma: { 
-          include: { curso: true }
+          include: { classe: true }
         } 
       },
       orderBy: { nome_estudante: 'asc' },
@@ -103,7 +103,7 @@ export class EstudantesService {
     const est = await this.prisma.estudante.findUnique({
       where: { id_estudante: id },
       include: {
-        turma: { include: { curso: true } },
+        turma: { include: { classe: true } },
         notas: { include: { disciplina: true } },
         faltas: { include: { disciplina: true } },
       },
@@ -122,7 +122,7 @@ export class EstudantesService {
       where: { id_estudante: id }, 
       data: dto,
       include: {
-        turma: { include: { curso: true } }
+        turma: { include: { classe: true } }
       }
     });
   }
@@ -145,7 +145,7 @@ export class EstudantesService {
     const deletedEstudante = await this.prisma.estudante.delete({
       where: { id_estudante: id },
       include: {
-        turma: { include: { curso: true } }
+        turma: { include: { classe: true } }
       }
     });
     

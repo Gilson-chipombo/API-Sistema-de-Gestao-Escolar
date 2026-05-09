@@ -1,4 +1,4 @@
-import { PrismaClient, PerfilUsuario, StatusUsuario, NivelAcademico, StatusProfessor, StatusEstudante, TipoFalta, DestinatarioAviso, PrioridadeAviso } from '@prisma/client';
+import { PrismaClient, PerfilUsuario, StatusUsuario, NivelAcademico, StatusProfessor, StatusEstudante, TipoFalta, DestinatarioAviso, PrioridadeAviso, TipoEnsino } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -35,18 +35,18 @@ async function main() {
   });
   console.log('✅  Secretaria criada');
 
-  // ── Cursos ────────────────────────────────────────────
-  const cursoInf = await prisma.curso.upsert({
-    where: { sigla_curso: 'INF' },
+  // ── Classes ───────────────────────────────────────────
+  const classeInf = await prisma.classe.upsert({
+    where: { id_classe: 1 },
     update: {},
-    create: { sigla_curso: 'INF', descricao_curso: 'Informática' },
+    create: { sigla_classe: '10ª', descricao_classe: 'Décima Classe - Informática', nomeCurso: 'Informática', tipoEnsino: TipoEnsino.MEDIO },
   });
-  const cursoGest = await prisma.curso.upsert({
-    where: { sigla_curso: 'GEST' },
+  const classeGest = await prisma.classe.upsert({
+    where: { id_classe: 2 },
     update: {},
-    create: { sigla_curso: 'GEST', descricao_curso: 'Gestão e Administração' },
+    create: { sigla_classe: '10ª', descricao_classe: 'Décima Classe - Gestão', nomeCurso: 'Gestão e Administração', tipoEnsino: TipoEnsino.MEDIO },
   });
-  console.log('✅  Cursos criados');
+  console.log('✅  Classes criadas');
 
   // ── Disciplinas ───────────────────────────────────────
   const disciplinas = [
@@ -69,29 +69,29 @@ async function main() {
   }
   console.log('✅  Disciplinas criadas');
 
-  // ── Associar Disciplinas aos Cursos ────────────────────
+  // ── Associar Disciplinas às Classes ───────────────────
   // Buscar disciplinas criadas
   const allDisciplinas = await prisma.disciplina.findMany();
   
-  // Disciplinas para o curso de Informática
+  // Disciplinas para a classe de Informática
   const disciplinasInformatica = allDisciplinas.filter(d => 
     ['MAT', 'PORT', 'FIS', 'QUIM', 'INF'].includes(d.sigla_disc)
   );
   
   // Remover associações antigas
-  await prisma.cursoDisciplina.deleteMany({ where: { curso_id: cursoInf.id_curso } });
+  await prisma.classeDisciplina.deleteMany({ where: { classe_id: classeInf.id_classe } });
   
   // Criar novas associações
   for (let i = 0; i < disciplinasInformatica.length; i++) {
-    await prisma.cursoDisciplina.create({
+    await prisma.classeDisciplina.create({
       data: {
-        curso_id: cursoInf.id_curso,
+        classe_id: classeInf.id_classe,
         disciplina_id: disciplinasInformatica[i].id_disc,
         ordem: i + 1,
       },
     });
   }
-  console.log('✅  Disciplinas associadas ao curso Informática');
+  console.log('✅  Disciplinas associadas à classe Informática');
 
   // ── Professor ─────────────────────────────────────────
   const profPass = await bcrypt.hash('prof123', 10);
@@ -214,7 +214,7 @@ async function main() {
       turno_turma: 'Manhã',
       classe_turma: '10ª',
       sala_turma: 'Sala 01',
-      curso_id: cursoInf.id_curso,
+      classe_id: classeInf.id_classe,
       diretor_turma: professor.id_prof,
       numero_aluno_turma: 35,
     },
