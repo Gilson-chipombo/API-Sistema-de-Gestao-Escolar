@@ -2,9 +2,6 @@
 ALTER TABLE "Curso" ADD COLUMN "nomeCurso" TEXT,
 ADD COLUMN "tipoEnsino" TEXT NOT NULL DEFAULT 'SECUNDARIO';
 
--- Remover constraint unique antiga de sigla_curso
-ALTER TABLE "Curso" DROP CONSTRAINT "Curso_sigla_curso_key";
-
 -- Adicionar nova constraint unique em (sigla_curso, nomeCurso, tipoEnsino)
 ALTER TABLE "Curso" ADD CONSTRAINT "Curso_sigla_curso_nomeCurso_tipoEnsino_key" UNIQUE ("sigla_curso", "nomeCurso", "tipoEnsino");
 
