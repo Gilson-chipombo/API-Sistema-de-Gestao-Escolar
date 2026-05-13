@@ -78,6 +78,17 @@ export class EstudantesService {
     });
 
     this.logger.log(`[SERVICE-CREATEWITHUSER] Estudante criado: ${estudante.id_estudante}`);
+
+    // ✅ NOVO: Atualizar usuário com o estudanteId
+    await this.prisma.usuario.update({
+      where: { id_usuario: usuario.id_usuario },
+      data: { estudanteId: estudante.id_estudante }
+    });
+
+    this.logger.log(
+      `[SERVICE-CREATEWITHUSER] ✓ Usuário ${usuario.id_usuario} linkado com Estudante ${estudante.id_estudante}`
+    );
+
     return estudante;
   }
 
