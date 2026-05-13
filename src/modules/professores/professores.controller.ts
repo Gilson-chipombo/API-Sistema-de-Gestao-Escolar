@@ -85,6 +85,20 @@ export class ProfessoresController {
     }
   }
 
+  @Get('email/:email')
+  @ApiOperation({ summary: 'Detalhe do professor por email' })
+  async findByEmail(@Param('email') email: string) {
+    this.logger.log(`[FINDBYEMAIL] Buscando professor com email: ${email}`);
+    try {
+      const result = await this.service.findByEmail(email);
+      this.logger.log(`[FINDBYEMAIL] Professor encontrado: ${result.nome_prof}`);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`[FINDBYEMAIL] Erro: ${error?.message}`, error?.stack);
+      throw error;
+    }
+  }
+
   @Put(':id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'SECRETARIA')

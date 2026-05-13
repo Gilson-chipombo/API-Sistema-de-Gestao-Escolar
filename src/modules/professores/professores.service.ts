@@ -251,6 +251,47 @@ export class ProfessoresService {
     return prof;
   }
 
+  async findByEmail(email: string) {
+    this.logger.debug(`[SERVICE-FINDBYEMAIL] Buscando professor com email: ${email}`);
+    const prof = await this.prisma.professor.findFirst({
+      where: { email_prof: email },
+      include: {
+        usuario: true,
+        turmas_dirigidas: true,
+        disciplinas: { include: { disciplina: true } },
+        turmas: { include: { turma: true } },
+      },
+    });
+    if (!prof) throw new NotFoundException(`Professor com email "${email}" não encontrado.`);
+
+    // Filtrar turmas que não existem mais (limpeza automática)
+    if (prof.turmas && prof.turmas.length > 0) {
+      const turmasValidas = prof.turmas.filter(pt => pt.turma !== null);
+      const turmasInvalidas = prof.turmas.filter(pt => pt.turma === null);
+      
+      if (turmasInvalidas.length > 0) {
+        this.logger.warn(
+          `[SERVICE-FINDBYEMAIL] Professor ${prof.id_prof} tem ${turmasInvalidas.length} turma(s) deletada(s). Limpando...`,
+        );
+        
+        // Deletar referências de turmas que não existem
+        await Promise.all(
+          turmasInvalidas.map(pt =>
+            this.prisma.professorTurma.delete({
+              where: { id: pt.id },
+            }).catch(err => 
+              this.logger.warn(`[SERVICE-FINDBYEMAIL] Erro ao deletar referência de turma: ${err.message}`)
+            ),
+          ),
+        );
+      }
+
+      prof.turmas = turmasValidas;
+    }
+
+    return prof;
+  }
+
   async update(id: number, dto: UpdateProfessorDto) {
     this.logger.debug(`[SERVICE-UPDATE] Atualizando professor ID: ${id}`);
     await this.findOne(id);
