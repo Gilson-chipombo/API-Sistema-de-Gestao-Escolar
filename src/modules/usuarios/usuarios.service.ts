@@ -103,6 +103,46 @@ export class UsuariosService {
     return user;
   }
 
+  async changePassword(
+    id: number,
+    dto: { currentPassword: string; newPassword: string; confirmPassword: string },
+  ) {
+    // Validar se as senhas novas coincidem
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new UnauthorizedException('As novas palavras-passe não coincidem.');
+    }
+
+    // Validar comprimento mínimo
+    if (dto.newPassword.length < 6) {
+      throw new UnauthorizedException('A nova palavra-passe deve ter pelo menos 6 caracteres.');
+    }
+
+    // Buscar utilizador
+    const user = await this.prisma.usuario.findUnique({
+      where: { id_usuario: id },
+    });
+    if (!user) throw new NotFoundException(`Utilizador #${id} não encontrado.`);
+
+    // Verificar se a senha atual está correta
+    const valid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!valid) throw new UnauthorizedException('Palavra-passe atual incorreta.');
+
+    // Hash da nova senha
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    // Atualizar a senha
+    const updatedUser = await this.prisma.usuario.update({
+      where: { id_usuario: id },
+      data: { password: hashedPassword },
+      select: { id_usuario: true, user_name: true, email: true, perfil: true, status: true, created_at: true },
+    });
+
+    return {
+      message: 'Palavra-passe alterada com sucesso.',
+      user: updatedUser,
+    };
+  }
+
   async remove(id: number) {
     await this.findOne(id);
     return this.prisma.usuario.update({

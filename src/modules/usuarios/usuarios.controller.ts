@@ -58,4 +58,15 @@ export class UsuariosController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);
   }
+
+  @Post('change-password/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Alterar password do utilizador' })
+  changePassword(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { currentPassword: string; newPassword: string; confirmPassword: string },
+  ) {
+    return this.service.changePassword(id, dto);
+  }
 }
