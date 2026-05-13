@@ -159,7 +159,7 @@ async function main() {
   });
   console.log('✅  Professor 2 criado:', professor2.nome_prof);
 
-  const prof3Pass = await bcrypt.hash('prof3123', 10);
+  const prof3Pass = await bcrypt.hash('prof123', 10);
   const prof3Usuario = await prisma.usuario.upsert({
     where: { email: 'carlos.dias@escola.ao' },
     update: {},

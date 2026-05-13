@@ -50,6 +50,7 @@ export class UsuariosService {
       perfil: user.perfil,
       user_name: user.user_name,
       status: user.status,
+      estudanteId: user.estudanteId || null,
     };
   }
 
