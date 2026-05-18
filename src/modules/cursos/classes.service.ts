@@ -1,54 +1,48 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateClasseDto, UpdateClasseDto } from './dto/classe.dto';
-import { calcularTipoEnsino } from '../../common/helpers/tipoEnsino.helper';
-import { TipoEnsino } from '@prisma/client';
 
 @Injectable()
 export class ClassesService {
   constructor(private prisma: PrismaService) {}
 
-  /**
-   * Calcula e valida tipoEnsino baseado na sigla_classe
-   */
-  private validarECalcularTipoEnsino(sigla_classe: string, tipoEnsino?: TipoEnsino): TipoEnsino {
-    const calculado = calcularTipoEnsino(sigla_classe);
-    
-    // Se foi fornecido um tipoEnsino, validar se é consistente
-    if (tipoEnsino && tipoEnsino !== calculado) {
-      throw new BadRequestException(
-        `tipoEnsino '${tipoEnsino}' é inconsistente com a classe '${sigla_classe}'. Esperado: '${calculado}'`
-      );
-    }
-
-    return calculado;
-  }
-
   async create(dto: CreateClasseDto) {
-    const tipoEnsino = this.validarECalcularTipoEnsino(dto.sigla_classe, dto.tipoEnsino);
-
-    // Validar unicidade: (sigla_classe, nomeCurso, tipoEnsino)
+    // Validar unicidade: (sigla_classe, tipoEnsino)
     const exists = await this.prisma.classe.findFirst({
       where: {
         sigla_classe: dto.sigla_classe,
-        nomeCurso: dto.nomeCurso || null,
-        tipoEnsino: tipoEnsino,
+        tipoEnsino: dto.tipoEnsino,
       },
     });
 
     if (exists) {
-      throw new ConflictException('Classe com essa sigla, curso e tipo de ensino já existe.');
+      throw new ConflictException('Classe com essa sigla e tipo de ensino já existe.');
+    }
+
+    // Se curso_id foi fornecido, validar se existe
+    if (dto.curso_id) {
+      const cursoExists = await this.prisma.curso.findUnique({
+        where: { id_curso: dto.curso_id },
+      });
+      if (!cursoExists) {
+        throw new NotFoundException(`Curso #${dto.curso_id} não encontrado.`);
+      }
     }
 
     const { disciplinasIds, ...classeData } = dto;
 
-    // Criar classe
+    // Criar classe - garantir que tipoEnsino é obrigatório
     const classe = await this.prisma.classe.create({
       data: {
-        ...classeData,
-        tipoEnsino,
+        sigla_classe: classeData.sigla_classe,
+        descricao_classe: classeData.descricao_classe,
+        tipoEnsino: classeData.tipoEnsino || 'SECUNDARIO',
+        ...(classeData.curso_id && { curso_id: classeData.curso_id }),
       },
-      include: { disciplinas: { include: { disciplina: true } } },
+      include: {
+        curso: true,
+        disciplinas: { include: { disciplina: true } },
+      },
     });
 
     // Adicionar disciplinas se fornecidas
@@ -67,6 +61,7 @@ export class ClassesService {
       return this.prisma.classe.findUnique({
         where: { id_classe: classe.id_classe },
         include: {
+          curso: true,
           disciplinas: { include: { disciplina: true }, orderBy: { ordem: 'asc' } },
         },
       });
@@ -77,8 +72,9 @@ export class ClassesService {
 
   findAll() {
     return this.prisma.classe.findMany({
-      orderBy: [{ tipoEnsino: 'asc' }, { sigla_classe: 'asc' }, { nomeCurso: 'asc' }],
+      orderBy: [{ tipoEnsino: 'asc' }, { sigla_classe: 'asc' }],
       include: {
+        curso: true,
         disciplinas: { include: { disciplina: true }, orderBy: { ordem: 'asc' } },
         _count: { select: { turmas: true } },
       },
@@ -89,6 +85,7 @@ export class ClassesService {
     const classe = await this.prisma.classe.findUnique({
       where: { id_classe: id },
       include: {
+        curso: true,
         disciplinas: { include: { disciplina: true }, orderBy: { ordem: 'asc' } },
         turmas: true,
       },
@@ -98,22 +95,33 @@ export class ClassesService {
   }
 
   async update(id: number, dto: UpdateClasseDto) {
-    const classeExistente = await this.findOne(id);
+    await this.findOne(id);
 
-    // Se atualizando sigla_classe, revalidar tipoEnsino
-    const sigla = dto.sigla_classe || classeExistente.sigla_classe;
-    const tipoEnsino = this.validarECalcularTipoEnsino(sigla, dto.tipoEnsino);
+    // Se curso_id foi fornecido, validar se existe
+    if (dto.curso_id) {
+      const cursoExists = await this.prisma.curso.findUnique({
+        where: { id_curso: dto.curso_id },
+      });
+      if (!cursoExists) {
+        throw new NotFoundException(`Curso #${dto.curso_id} não encontrado.`);
+      }
+    }
 
     const { disciplinasIds, ...classeData } = dto;
 
-    // Atualizar dados da classe
+    // Atualizar dados da classe - apenas campos definidos
     const classe = await this.prisma.classe.update({
       where: { id_classe: id },
       data: {
-        ...classeData,
-        tipoEnsino,
+        ...(classeData.sigla_classe && { sigla_classe: classeData.sigla_classe }),
+        ...(classeData.descricao_classe && { descricao_classe: classeData.descricao_classe }),
+        ...(classeData.tipoEnsino && { tipoEnsino: classeData.tipoEnsino }),
+        ...(classeData.curso_id !== undefined && { curso_id: classeData.curso_id }),
       },
-      include: { disciplinas: { include: { disciplina: true } } },
+      include: {
+        curso: true,
+        disciplinas: { include: { disciplina: true } },
+      },
     });
 
     // Atualizar disciplinas se fornecidas
@@ -140,6 +148,7 @@ export class ClassesService {
       return this.prisma.classe.findUnique({
         where: { id_classe: id },
         include: {
+          curso: true,
           disciplinas: { include: { disciplina: true }, orderBy: { ordem: 'asc' } },
         },
       });

@@ -29,7 +29,7 @@ export class TurmasService {
           ...(classe && { classe_turma: classe }),
         },
         include: {
-          classe: { select: { id_classe: true, sigla_classe: true, descricao_classe: true, duracao_semestres: true, nomeCurso: true, tipoEnsino: true } },
+          classe: { select: { id_classe: true, sigla_classe: true, descricao_classe: true, tipoEnsino: true, curso: true } },
           diretor: { select: { id_prof: true, nome_prof: true } },
           _count: { select: { estudantes: true } },
         },
@@ -87,7 +87,7 @@ export class TurmasService {
           ],
         },
         include: {
-          classe: { select: { id_classe: true, sigla_classe: true, descricao_classe: true, nomeCurso: true, tipoEnsino: true } },
+          classe: { select: { id_classe: true, sigla_classe: true, descricao_classe: true, tipoEnsino: true, curso: true } },
           diretor: { select: { id_prof: true, nome_prof: true } },
           _count: { select: { estudantes: true } },
         },

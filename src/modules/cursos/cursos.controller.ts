@@ -17,24 +17,26 @@ export class CursosController {
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Criar curso' })
-  create(@Body() dto: CreateCursoDto) { return this.service.create(dto); }
+  create(@Body() dto: CreateCursoDto) {
+    return this.service.create(dto);
+  }
 
   @Get()
-  @ApiOperation({ summary: 'Listar cursos' })
-  findAll() { return this.service.findAll(); }
+  @ApiOperation({ summary: 'Listar todos os cursos' })
+  findAll() {
+    return this.service.findAll();
+  }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) { return this.service.findOne(id); }
-
-  @Get(':id/disciplinas')
-  @ApiOperation({ summary: 'Listar disciplinas de um curso' })
-  getDisciplinas(@Param('id', ParseIntPipe) id: number) {
-    return this.service.getDisciplinas(id);
+  @ApiOperation({ summary: 'Obter detalhes de um curso' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findOne(id);
   }
 
   @Put(':id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
+  @ApiOperation({ summary: 'Atualizar curso' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCursoDto) {
     return this.service.update(id, dto);
   }
@@ -42,5 +44,8 @@ export class CursosController {
   @Delete(':id')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  remove(@Param('id', ParseIntPipe) id: number) { return this.service.remove(id); }
+  @ApiOperation({ summary: 'Deletar curso' })
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.service.remove(id);
+  }
 }

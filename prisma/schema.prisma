@@ -48,19 +48,30 @@ model Professor {
   turmas_dirigidas       Turma[]
 }
 
+model Curso {
+  id_curso           Int        @id @default(autoincrement())
+  sigla_curso        String
+  descricao_curso    String
+  duracao_semestres  Int?
+  objetivo_curso     String?
+  created_at         DateTime   @default(now())
+  updated_at         DateTime   @updatedAt
+  classes            Classe[]
+}
+
 model Classe {
   id_classe          Int               @id @default(autoincrement())
   sigla_classe       String
   descricao_classe   String
-  nomeCurso          String?
   tipoEnsino         TipoEnsino
   created_at         DateTime          @default(now())
   updated_at         DateTime          @updatedAt
-  duracao_semestres  Int?
+  curso_id           Int?
+  curso              Curso?            @relation(fields: [curso_id], references: [id_curso], onDelete: SetNull)
   disciplinas        ClasseDisciplina[]
   turmas             Turma[]
 
-  @@unique([sigla_classe, nomeCurso, tipoEnsino])
+  @@unique([sigla_classe, tipoEnsino])
 }
 
 model Turma {

@@ -35,16 +35,30 @@ async function main() {
   });
   console.log('✅  Secretaria criada');
 
-  // ── Classes ───────────────────────────────────────────
-  const classeInf = await prisma.classe.upsert({
-    where: { id_classe: 1 },
+  // ── Cursos ────────────────────────────────────────────
+  const cursoInf = await prisma.curso.upsert({
+    where: { id_curso: 1 },
     update: {},
-    create: { sigla_classe: '10ª', descricao_classe: 'Décima Classe - Informática', nomeCurso: 'Informática', tipoEnsino: TipoEnsino.MEDIO },
+    create: { sigla_curso: 'INF', descricao_curso: 'Informática', duracao_semestres: 6, objetivo_curso: 'Formar profissionais na área de Tecnologia' },
   });
-  const classeGest = await prisma.classe.upsert({
-    where: { id_classe: 2 },
+  const cursoGest = await prisma.curso.upsert({
+    where: { id_curso: 2 },
     update: {},
-    create: { sigla_classe: '10ª', descricao_classe: 'Décima Classe - Gestão', nomeCurso: 'Gestão e Administração', tipoEnsino: TipoEnsino.MEDIO },
+    create: { sigla_curso: 'GEST', descricao_curso: 'Gestão e Administração', duracao_semestres: 6, objetivo_curso: 'Formar profissionais em gestão' },
+  });
+  console.log('✅  Cursos criados');
+
+  // ── Classes ───────────────────────────────────────────
+  // Deletar classes antigas para recriá-las
+  await prisma.classe.deleteMany({
+    where: { tipoEnsino: TipoEnsino.MEDIO }
+  });
+  
+  const classeInf = await prisma.classe.create({
+    data: { sigla_classe: '10ª A', descricao_classe: 'Décima Classe - Informática', tipoEnsino: TipoEnsino.MEDIO, curso_id: cursoInf.id_curso },
+  });
+  const classeGest = await prisma.classe.create({
+    data: { sigla_classe: '10ª B', descricao_classe: 'Décima Classe - Gestão', tipoEnsino: TipoEnsino.MEDIO, curso_id: cursoGest.id_curso },
   });
   console.log('✅  Classes criadas');
 
@@ -237,6 +251,83 @@ async function main() {
   });
   console.log('✅  Estudante criado:', estudante.nome_estudante);
 
+  // ── Linkar Usuario com Estudante ──────────────────────
+  await prisma.usuario.update({
+    where: { id_usuario: estudanteUsuario.id_usuario },
+    data: { estudanteId: estudante.id_estudante },
+  });
+  console.log('✅  Usuário linkado com Estudante (estudanteId:', estudante.id_estudante, ')');
+
+  // ── Estudantes Adicionais ─────────────────────────────
+  const estudante2Pass = await bcrypt.hash('aluno2123', 10);
+  const estudante2Usuario = await prisma.usuario.upsert({
+    where: { email: 'joao.silva@escola.ao' },
+    update: {},
+    create: {
+      user_name: 'João Pedro Silva',
+      email: 'joao.silva@escola.ao',
+      password: estudante2Pass,
+      perfil: PerfilUsuario.ESTUDANTE,
+      status: StatusUsuario.ATIVO,
+    },
+  });
+
+  const estudante2 = await prisma.estudante.upsert({
+    where: { numero_bi_estudante: '006223344LA050' },
+    update: {},
+    create: {
+      nome_estudante: 'João Pedro Silva',
+      data_nascimento: new Date('2007-07-15'),
+      naturalidade_estudante: 'Benguela',
+      numero_bi_estudante: '006223344LA050',
+      endereco_fisico_estudante: 'Bairro do Kilumba, Luanda',
+      turma_id: turma.id_turma,
+      status: StatusEstudante.ATIVO,
+    },
+  });
+  
+  await prisma.usuario.update({
+    where: { id_usuario: estudante2Usuario.id_usuario },
+    data: { estudanteId: estudante2.id_estudante },
+  });
+  console.log('✅  Estudante 2 criado:', estudante2.nome_estudante);
+
+  const estudante3Pass = await bcrypt.hash('aluno3123', 10);
+  const estudante3Usuario = await prisma.usuario.upsert({
+    where: { email: 'ana.costa@escola.ao' },
+    update: {},
+    create: {
+      user_name: 'Ana Clara Costa',
+      email: 'ana.costa@escola.ao',
+      password: estudante3Pass,
+      perfil: PerfilUsuario.ESTUDANTE,
+      status: StatusUsuario.ATIVO,
+    },
+  });
+
+  const estudante3 = await prisma.estudante.upsert({
+    where: { numero_bi_estudante: '007334455LA051' },
+    update: {},
+    create: {
+      nome_estudante: 'Ana Clara Costa',
+      data_nascimento: new Date('2006-11-08'),
+      naturalidade_estudante: 'Luanda',
+      numero_bi_estudante: '007334455LA051',
+      endereco_fisico_estudante: 'Bairro Miramar, Luanda',
+      turma_id: turma.id_turma,
+      status: StatusEstudante.ATIVO,
+    },
+  });
+  
+  await prisma.usuario.update({
+    where: { id_usuario: estudante3Usuario.id_usuario },
+    data: { estudanteId: estudante3.id_estudante },
+  });
+  console.log('✅  Estudante 3 criado:', estudante3.nome_estudante);
+
+  // ── Colecionar todos os estudantes criados ──────────
+  const todosEstudantes = [estudante, estudante2, estudante3];
+
   // ── Notas de exemplo ──────────────────────────────────
   const disciplinasArray = await prisma.disciplina.findMany();
   const notasExemplo = [
@@ -247,24 +338,27 @@ async function main() {
     { disc: 'BIO', trimestre: 1, mac: 15.5, pp: 15.0, pt: 16.0 },
   ];
 
-  for (const nota of notasExemplo) {
-    const disc = disciplinasArray.find(d => d.sigla_disc === nota.disc);
-    if (disc) {
-      await prisma.nota.create({
-        data: {
-          estudante_id: estudante.id_estudante,
-          disciplina_id: disc.id_disc,
-          turma_id: turma.id_turma,
-          trimestre_nota: nota.trimestre,
-          mac_notas: nota.mac,
-          pp_notas: nota.pp,
-          pt_notas: nota.pt,
-          ano_letivo: 2025,
-        },
-      });
+  // Criar notas para cada estudante
+  for (const est of todosEstudantes) {
+    for (const nota of notasExemplo) {
+      const disc = disciplinasArray.find(d => d.sigla_disc === nota.disc);
+      if (disc) {
+        await prisma.nota.create({
+          data: {
+            estudante_id: est.id_estudante,
+            disciplina_id: disc.id_disc,
+            turma_id: turma.id_turma,
+            trimestre_nota: nota.trimestre,
+            mac_notas: nota.mac,
+            pp_notas: nota.pp,
+            pt_notas: nota.pt,
+            ano_letivo: 2025,
+          },
+        });
+      }
     }
   }
-  console.log('✅  Notas de exemplo criadas');
+  console.log('✅  Notas de exemplo criadas para', todosEstudantes.length, 'estudantes');
 
   // ── Faltas de exemplo ─────────────────────────────────
   const faltasExemplo = [
@@ -275,24 +369,26 @@ async function main() {
     { disc: 'BIO', count: 1 },
   ];
 
-  for (const falta of faltasExemplo) {
-    const disc = disciplinasArray.find(d => d.sigla_disc === falta.disc);
-    if (disc) {
-      for (let i = 0; i < falta.count; i++) {
-        await prisma.falta.create({
-          data: {
-            estudante_id: estudante.id_estudante,
-            disciplina_id: disc.id_disc,
-            turma_id: turma.id_turma,
-            data_falta: new Date(2025, 10, Math.floor(Math.random() * 20) + 1),
-            tipo_falta: TipoFalta.INJUSTIFICADA,
-           // professor_id: professor.id_prof,
-          },
-        });
+  // Criar faltas para cada estudante
+  for (const est of todosEstudantes) {
+    for (const falta of faltasExemplo) {
+      const disc = disciplinasArray.find(d => d.sigla_disc === falta.disc);
+      if (disc) {
+        for (let i = 0; i < falta.count; i++) {
+          await prisma.falta.create({
+            data: {
+              estudante_id: est.id_estudante,
+              disciplina_id: disc.id_disc,
+              turma_id: turma.id_turma,
+              data_falta: new Date(2025, 10, Math.floor(Math.random() * 20) + 1),
+              tipo_falta: TipoFalta.INJUSTIFICADA,
+            },
+          });
+        }
       }
     }
   }
-  console.log('✅  Faltas de exemplo criadas');
+  console.log('✅  Faltas de exemplo criadas para', todosEstudantes.length, 'estudantes');
 
   // ── Avisos ────────────────────────────────────────────
   const hoje = new Date();
@@ -337,10 +433,12 @@ async function main() {
   console.log('\n🎉  Seed concluído com sucesso!\n');
   console.log('─────────────────────────────────────────');
   console.log('  Credenciais de acesso:');
-  console.log('  Admin:      admin@escola.ao            / admin123');
-  console.log('  Secretaria: secretaria@escola.ao       / sec123');
-  console.log('  Professor:  prof.silva@escola.ao       / prof123');
-  console.log('  Estudante:  maria.ferreira@escola.ao   / aluno123');
+  console.log('  Admin:        admin@escola.ao            / admin123');
+  console.log('  Secretaria:   secretaria@escola.ao       / sec123');
+  console.log('  Professor:    prof.silva@escola.ao       / prof123');
+  console.log('  Estudante 1:  maria.ferreira@escola.ao   / aluno123');
+  console.log('  Estudante 2:  joao.silva@escola.ao       / aluno2123');
+  console.log('  Estudante 3:  ana.costa@escola.ao        / aluno3123');
   console.log('─────────────────────────────────────────\n');
 }
 
