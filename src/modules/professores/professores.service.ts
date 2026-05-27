@@ -20,6 +20,11 @@ export class ProfessoresService {
     // Extrair disciplinas e turmas do DTO
     const { disciplinas, turmas, ...createData } = dto;
     
+    // Validar se já existe professor lecionando as mesmas disciplinas nas mesmas turmas
+    if (disciplinas && disciplinas.length > 0 && turmas && turmas.length > 0) {
+      await this.validateNoOverlap(null, disciplinas, turmas);
+    }
+    
     const professor = await this.prisma.professor.create({ data: createData as any });
 
     // Criar associações com disciplinas, se houver
@@ -71,6 +76,11 @@ export class ProfessoresService {
       where: { email: dto.email },
     });
     if (existsEmail) throw new ConflictException('Email já registado.');
+
+    // Validar se já existe professor lecionando as mesmas disciplinas nas mesmas turmas
+    if (dto.disciplinas && dto.disciplinas.length > 0 && dto.turmas && dto.turmas.length > 0) {
+      await this.validateNoOverlap(null, dto.disciplinas, dto.turmas);
+    }
 
     try {
       // Hash da password
@@ -294,10 +304,27 @@ export class ProfessoresService {
 
   async update(id: number, dto: UpdateProfessorDto) {
     this.logger.debug(`[SERVICE-UPDATE] Atualizando professor ID: ${id}`);
-    await this.findOne(id);
+    const existingProf = await this.findOne(id);
 
     // Extrair disciplinas e turmas do DTO
     const { disciplinas, turmas, ...updateData } = dto;
+
+    // Validar se há conflito nas novas atribuições de disciplinas e turmas
+    let finalDisciplinas = disciplinas;
+    let finalTurmas = turmas;
+
+    if (finalDisciplinas !== undefined || finalTurmas !== undefined) {
+      if (finalDisciplinas === undefined) {
+        finalDisciplinas = existingProf.disciplinas.map(d => d.disciplina_id);
+      }
+      if (finalTurmas === undefined) {
+        finalTurmas = existingProf.turmas.map(t => t.turma_id);
+      }
+
+      if (finalDisciplinas.length > 0 && finalTurmas.length > 0) {
+        await this.validateNoOverlap(id, finalDisciplinas, finalTurmas);
+      }
+    }
 
     const updated = await this.prisma.professor.update({
       where: { id_prof: id },
@@ -381,5 +408,50 @@ export class ProfessoresService {
     
     this.logger.log(`[SERVICE-REMOVE] Professor ${id} inativado com sucesso`);
     return removed;
+  }
+
+  private async validateNoOverlap(professorId: number | null, disciplinaIds: number[], turmaIds: number[]) {
+    this.logger.debug(`[SERVICE-VALIDATE-OVERLAP] Validando disciplinas/turmas para professor ID: ${professorId}`);
+    
+    const conflict = await this.prisma.professor.findFirst({
+      where: {
+        status: { not: 'INATIVO' },
+        ...(professorId && { id_prof: { not: professorId } }),
+        disciplinas: {
+          some: {
+            disciplina_id: { in: disciplinaIds },
+          },
+        },
+        turmas: {
+          some: {
+            turma_id: { in: turmaIds },
+          },
+        },
+      },
+      include: {
+        disciplinas: {
+          include: {
+            disciplina: true,
+          },
+        },
+        turmas: {
+          include: {
+            turma: true,
+          },
+        },
+      },
+    });
+
+    if (conflict) {
+      const conflictingDisc = conflict.disciplinas.find(d => disciplinaIds.includes(d.disciplina_id))?.disciplina;
+      const conflictingTurma = conflict.turmas.find(t => turmaIds.includes(t.turma_id))?.turma;
+      
+      const discName = conflictingDisc ? (conflictingDisc.sigla_disc || conflictingDisc.descricao_disc) : 'Disciplina';
+      const turmaName = conflictingTurma ? (conflictingTurma.sigla_turma || `ID ${conflictingTurma.id_turma}`) : 'Turma';
+      
+      throw new ConflictException(
+        `Conflito de atribuição: O professor "${conflict.nome_prof}" já está associado à disciplina "${discName}" na turma "${turmaName}".`
+      );
+    }
   }
 }
