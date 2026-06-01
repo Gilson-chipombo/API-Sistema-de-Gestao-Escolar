@@ -1,7 +1,18 @@
-import { IsDate, IsEnum, IsInt, IsOptional, IsString, IsEmail, IsArray } from 'class-validator';
+import { IsDate, IsEnum, IsInt, IsOptional, IsString, IsEmail, IsArray, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { NivelAcademico, StatusProfessor } from '@prisma/client';
+
+// DTO para cada item de turma-disciplina
+export class TurmaDisciplinaDto {
+  @ApiProperty({ description: 'ID da turma' })
+  @IsInt()
+  turma_id: number;
+
+  @ApiProperty({ description: 'ID da disciplina' })
+  @IsInt()
+  disciplina_id: number;
+}
 
 export class CreateProfessorDto {
   @ApiProperty() @IsString() nome_prof: string;
@@ -19,16 +30,35 @@ export class CreateProfessorDto {
   @ApiPropertyOptional() @IsOptional() @IsInt() ano_conclusao_formacao?: number;
   @ApiPropertyOptional() @IsOptional() @Type(() => Date) @IsDate() data_admissao?: Date;
   @ApiProperty({ enum: StatusProfessor }) @IsEnum(StatusProfessor) status: StatusProfessor;
-  @ApiPropertyOptional({ type: 'array', items: { type: 'number' }, description: 'IDs das disciplinas' }) 
+  
+  @ApiPropertyOptional({ type: 'array', items: { type: 'number' }, description: 'IDs das disciplinas (DEPRECATED - use turmasDisciplinas)' }) 
   @IsOptional() 
   @IsArray() 
   @IsInt({ each: true }) 
   disciplinas?: number[];
-  @ApiPropertyOptional({ type: 'array', items: { type: 'number' }, description: 'IDs das turmas' }) 
+  
+  @ApiPropertyOptional({ type: 'array', items: { type: 'number' }, description: 'IDs das turmas (DEPRECATED - use turmasDisciplinas)' }) 
   @IsOptional() 
   @IsArray() 
   @IsInt({ each: true }) 
   turmas?: number[];
+
+  @ApiPropertyOptional({ 
+    type: 'array', 
+    items: { 
+      type: 'object',
+      properties: {
+        turma_id: { type: 'number' },
+        disciplina_id: { type: 'number' }
+      }
+    },
+    description: 'Array de turma-disciplina: especifica quais disciplinas o professor leciona em cada turma' 
+  }) 
+  @IsOptional() 
+  @IsArray() 
+  @ValidateNested({ each: true })
+  @Type(() => TurmaDisciplinaDto)
+  turmasDisciplinas?: TurmaDisciplinaDto[];
 }
 
 export class CreateProfessorWithUserDto extends CreateProfessorDto {
@@ -53,14 +83,33 @@ export class UpdateProfessorDto {
   @ApiPropertyOptional() @IsOptional() @IsInt() ano_conclusao_formacao?: number;
   @ApiPropertyOptional() @IsOptional() @Type(() => Date) @IsDate() data_admissao?: Date;
   @ApiPropertyOptional({ enum: StatusProfessor }) @IsOptional() @IsEnum(StatusProfessor) status?: StatusProfessor;
-  @ApiPropertyOptional({ type: 'array', items: { type: 'number' }, description: 'IDs das disciplinas' }) 
+  
+  @ApiPropertyOptional({ type: 'array', items: { type: 'number' }, description: 'IDs das disciplinas (DEPRECATED - use turmasDisciplinas)' }) 
   @IsOptional() 
   @IsArray() 
   @IsInt({ each: true }) 
   disciplinas?: number[];
-  @ApiPropertyOptional({ type: 'array', items: { type: 'number' }, description: 'IDs das turmas' }) 
+  
+  @ApiPropertyOptional({ type: 'array', items: { type: 'number' }, description: 'IDs das turmas (DEPRECATED - use turmasDisciplinas)' }) 
   @IsOptional() 
   @IsArray() 
   @IsInt({ each: true }) 
   turmas?: number[];
+
+  @ApiPropertyOptional({ 
+    type: 'array', 
+    items: { 
+      type: 'object',
+      properties: {
+        turma_id: { type: 'number' },
+        disciplina_id: { type: 'number' }
+      }
+    },
+    description: 'Array de turma-disciplina: especifica quais disciplinas o professor leciona em cada turma' 
+  }) 
+  @IsOptional() 
+  @IsArray() 
+  @ValidateNested({ each: true })
+  @Type(() => TurmaDisciplinaDto)
+  turmasDisciplinas?: TurmaDisciplinaDto[];
 }

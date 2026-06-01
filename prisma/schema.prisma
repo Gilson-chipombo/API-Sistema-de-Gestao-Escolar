@@ -45,6 +45,7 @@ model Professor {
   usuario                Usuario?              @relation(fields: [usuario_id], references: [id_usuario])
   disciplinas            ProfessorDisciplina[]
   turmas                 ProfessorTurma[]
+  turmasDisciplinas      ProfessorTurmaDisciplina[]
   turmas_dirigidas       Turma[]
 }
 
@@ -91,6 +92,7 @@ model Turma {
   faltas             Falta[]
   notas              Nota[]
   professores        ProfessorTurma[]
+  professorDisciplinas ProfessorTurmaDisciplina[] @relation("profesor_turma_disciplina")
   classe             Classe?          @relation(fields: [classe_id], references: [id_classe])
   diretor            Professor        @relation(fields: [diretor_turma], references: [id_prof])
 }
@@ -127,6 +129,7 @@ model Disciplina {
   faltas         Falta[]
   notas          Nota[]
   professores    ProfessorDisciplina[]
+  professorTurmaDisciplinas ProfessorTurmaDisciplina[] @relation("professor_disciplina")
 }
 
 model ClasseDisciplina {
@@ -210,6 +213,20 @@ model ProfessorTurma {
   turma        Turma     @relation(fields: [turma_id], references: [id_turma], onDelete: Cascade)
 
   @@unique([professor_id, turma_id])
+}
+
+model ProfessorTurmaDisciplina {
+  id            Int        @id @default(autoincrement())
+  professor_id  Int
+  turma_id      Int
+  disciplina_id Int
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  professor     Professor  @relation(fields: [professor_id], references: [id_prof], onDelete: Cascade)
+  turma         Turma      @relation(name: "profesor_turma_disciplina", fields: [turma_id], references: [id_turma], onDelete: Cascade)
+  disciplina    Disciplina @relation(name: "professor_disciplina", fields: [disciplina_id], references: [id_disc], onDelete: Cascade)
+
+  @@unique([professor_id, turma_id, disciplina_id])
 }
 
 enum PerfilUsuario {

@@ -17,45 +17,70 @@ export class ProfessoresService {
     });
     if (exists) throw new ConflictException('Número de BI já registado.');
 
-    // Extrair disciplinas e turmas do DTO
-    const { disciplinas, turmas, ...createData } = dto;
+    // Extrair disciplinas, turmas e turmasDisciplinas do DTO
+    const { disciplinas, turmas, turmasDisciplinas, ...createData } = dto;
     
-    // Validar se já existe professor lecionando as mesmas disciplinas nas mesmas turmas
-    if (disciplinas && disciplinas.length > 0 && turmas && turmas.length > 0) {
+    // Validar se há turmasDisciplinas
+    if (turmasDisciplinas && turmasDisciplinas.length > 0) {
+      // Extrair turma e disciplina IDs únicos
+      const turmaIds = [...new Set(turmasDisciplinas.map(td => td.turma_id))];
+      const disciplinaIds = [...new Set(turmasDisciplinas.map(td => td.disciplina_id))];
+      
+      // Validar se já existe conflito
+      await this.validateNoOverlapForTurmaDisciplina(null, turmasDisciplinas);
+    } else if (disciplinas && disciplinas.length > 0 && turmas && turmas.length > 0) {
+      // Fallback para estrutura antiga (compatibilidade)
       await this.validateNoOverlap(null, disciplinas, turmas);
     }
     
     const professor = await this.prisma.professor.create({ data: createData as any });
 
-    // Criar associações com disciplinas, se houver
-    if (disciplinas && disciplinas.length > 0) {
-      this.logger.debug(`[SERVICE-CREATE] Criando ${disciplinas.length} associações com disciplinas`);
+    // Processar turmasDisciplinas se fornecido
+    if (turmasDisciplinas && turmasDisciplinas.length > 0) {
+      this.logger.debug(`[SERVICE-CREATE] Criando ${turmasDisciplinas.length} associações turma-disciplina`);
       try {
-        await this.prisma.professorDisciplina.createMany({
-          data: disciplinas.map(disciplina_id => ({
+        await this.prisma.professorTurmaDisciplina.createMany({
+          data: turmasDisciplinas.map(td => ({
             professor_id: professor.id_prof,
-            disciplina_id,
+            turma_id: td.turma_id,
+            disciplina_id: td.disciplina_id,
           })),
           skipDuplicates: true,
         });
       } catch (error: any) {
-        this.logger.warn(`[SERVICE-CREATE] Aviso ao associar disciplinas: ${error?.message}`);
+        this.logger.warn(`[SERVICE-CREATE] Aviso ao associar turma-disciplina: ${error?.message}`);
       }
-    }
+    } else {
+      // Criar associações com disciplinas, se houver (compatibilidade)
+      if (disciplinas && disciplinas.length > 0) {
+        this.logger.debug(`[SERVICE-CREATE] Criando ${disciplinas.length} associações com disciplinas`);
+        try {
+          await this.prisma.professorDisciplina.createMany({
+            data: disciplinas.map(disciplina_id => ({
+              professor_id: professor.id_prof,
+              disciplina_id,
+            })),
+            skipDuplicates: true,
+          });
+        } catch (error: any) {
+          this.logger.warn(`[SERVICE-CREATE] Aviso ao associar disciplinas: ${error?.message}`);
+        }
+      }
 
-    // Criar associações com turmas, se houver
-    if (turmas && turmas.length > 0) {
-      this.logger.debug(`[SERVICE-CREATE] Criando ${turmas.length} associações com turmas`);
-      try {
-        await this.prisma.professorTurma.createMany({
-          data: turmas.map(turma_id => ({
-            professor_id: professor.id_prof,
-            turma_id,
-          })),
-          skipDuplicates: true,
-        });
-      } catch (error: any) {
-        this.logger.warn(`[SERVICE-CREATE] Aviso ao associar turmas: ${error?.message}`);
+      // Criar associações com turmas, se houver (compatibilidade)
+      if (turmas && turmas.length > 0) {
+        this.logger.debug(`[SERVICE-CREATE] Criando ${turmas.length} associações com turmas`);
+        try {
+          await this.prisma.professorTurma.createMany({
+            data: turmas.map(turma_id => ({
+              professor_id: professor.id_prof,
+              turma_id,
+            })),
+            skipDuplicates: true,
+          });
+        } catch (error: any) {
+          this.logger.warn(`[SERVICE-CREATE] Aviso ao associar turmas: ${error?.message}`);
+        }
       }
     }
 
@@ -77,8 +102,11 @@ export class ProfessoresService {
     });
     if (existsEmail) throw new ConflictException('Email já registado.');
 
-    // Validar se já existe professor lecionando as mesmas disciplinas nas mesmas turmas
-    if (dto.disciplinas && dto.disciplinas.length > 0 && dto.turmas && dto.turmas.length > 0) {
+    // Validar se há turmasDisciplinas
+    if (dto.turmasDisciplinas && dto.turmasDisciplinas.length > 0) {
+      await this.validateNoOverlapForTurmaDisciplina(null, dto.turmasDisciplinas);
+    } else if (dto.disciplinas && dto.disciplinas.length > 0 && dto.turmas && dto.turmas.length > 0) {
+      // Fallback para estrutura antiga
       await this.validateNoOverlap(null, dto.disciplinas, dto.turmas);
     }
 
@@ -124,37 +152,54 @@ export class ProfessoresService {
 
       this.logger.log(`[SERVICE-CREATE-WITH-USER] Professor criado - ID: ${professor.id_prof}, Usuário: ${usuario.id_usuario}`);
 
-      // Criar associações com disciplinas, se houver
-      if (dto.disciplinas && dto.disciplinas.length > 0) {
-        this.logger.debug(`[SERVICE-CREATE-WITH-USER] Criando ${dto.disciplinas.length} associações com disciplinas`);
+      // Processar turmasDisciplinas se fornecido
+      if (dto.turmasDisciplinas && dto.turmasDisciplinas.length > 0) {
+        this.logger.debug(`[SERVICE-CREATE-WITH-USER] Criando ${dto.turmasDisciplinas.length} associações turma-disciplina`);
         try {
-          await this.prisma.professorDisciplina.createMany({
-            data: dto.disciplinas.map(disciplina_id => ({
+          await this.prisma.professorTurmaDisciplina.createMany({
+            data: dto.turmasDisciplinas.map(td => ({
               professor_id: professor.id_prof,
-              disciplina_id,
+              turma_id: td.turma_id,
+              disciplina_id: td.disciplina_id,
             })),
             skipDuplicates: true,
           });
-          this.logger.debug(`[SERVICE-CREATE-WITH-USER] Disciplinas associadas com sucesso`);
         } catch (error: any) {
-          this.logger.warn(`[SERVICE-CREATE-WITH-USER] Aviso ao associar disciplinas: ${error?.message}`);
+          this.logger.warn(`[SERVICE-CREATE-WITH-USER] Aviso ao associar turma-disciplina: ${error?.message}`);
         }
-      }
+      } else {
+        // Criar associações com disciplinas, se houver (compatibilidade)
+        if (dto.disciplinas && dto.disciplinas.length > 0) {
+          this.logger.debug(`[SERVICE-CREATE-WITH-USER] Criando ${dto.disciplinas.length} associações com disciplinas`);
+          try {
+            await this.prisma.professorDisciplina.createMany({
+              data: dto.disciplinas.map(disciplina_id => ({
+                professor_id: professor.id_prof,
+                disciplina_id,
+              })),
+              skipDuplicates: true,
+            });
+            this.logger.debug(`[SERVICE-CREATE-WITH-USER] Disciplinas associadas com sucesso`);
+          } catch (error: any) {
+            this.logger.warn(`[SERVICE-CREATE-WITH-USER] Aviso ao associar disciplinas: ${error?.message}`);
+          }
+        }
 
-      // Criar associações com turmas, se houver
-      if (dto.turmas && dto.turmas.length > 0) {
-        this.logger.debug(`[SERVICE-CREATE-WITH-USER] Criando ${dto.turmas.length} associações com turmas`);
-        try {
-          await this.prisma.professorTurma.createMany({
-            data: dto.turmas.map(turma_id => ({
-              professor_id: professor.id_prof,
-              turma_id,
-            })),
-            skipDuplicates: true,
-          });
-          this.logger.debug(`[SERVICE-CREATE-WITH-USER] Turmas associadas com sucesso`);
-        } catch (error: any) {
-          this.logger.warn(`[SERVICE-CREATE-WITH-USER] Aviso ao associar turmas: ${error?.message}`);
+        // Criar associações com turmas, se houver (compatibilidade)
+        if (dto.turmas && dto.turmas.length > 0) {
+          this.logger.debug(`[SERVICE-CREATE-WITH-USER] Criando ${dto.turmas.length} associações com turmas`);
+          try {
+            await this.prisma.professorTurma.createMany({
+              data: dto.turmas.map(turma_id => ({
+                professor_id: professor.id_prof,
+                turma_id,
+              })),
+              skipDuplicates: true,
+            });
+            this.logger.debug(`[SERVICE-CREATE-WITH-USER] Turmas associadas com sucesso`);
+          } catch (error: any) {
+            this.logger.warn(`[SERVICE-CREATE-WITH-USER] Aviso ao associar turmas: ${error?.message}`);
+          }
         }
       }
 
@@ -175,6 +220,7 @@ export class ProfessoresService {
         turmas_dirigidas: true,
         disciplinas: { include: { disciplina: true } },
         turmas: { include: { turma: true } },
+        turmasDisciplinas: { include: { turma: true, disciplina: true } },
       },
     });
   }
@@ -188,6 +234,7 @@ export class ProfessoresService {
         turmas_dirigidas: true,
         disciplinas: { include: { disciplina: true } },
         turmas: { include: { turma: true } },
+        turmasDisciplinas: { include: { turma: true, disciplina: true } },
       },
     });
     if (!prof) throw new NotFoundException(`Professor #${id} não encontrado.`);
@@ -229,6 +276,7 @@ export class ProfessoresService {
         turmas_dirigidas: true,
         disciplinas: { include: { disciplina: true } },
         turmas: { include: { turma: true } },
+        turmasDisciplinas: { include: { turma: true, disciplina: true } },
       },
     });
     if (!prof) throw new NotFoundException(`Professor para usuário #${usuarioId} não encontrado.`);
@@ -270,6 +318,7 @@ export class ProfessoresService {
         turmas_dirigidas: true,
         disciplinas: { include: { disciplina: true } },
         turmas: { include: { turma: true } },
+        turmasDisciplinas: { include: { turma: true, disciplina: true } },
       },
     });
     if (!prof) throw new NotFoundException(`Professor com email "${email}" não encontrado.`);
@@ -306,14 +355,18 @@ export class ProfessoresService {
     this.logger.debug(`[SERVICE-UPDATE] Atualizando professor ID: ${id}`);
     const existingProf = await this.findOne(id);
 
-    // Extrair disciplinas e turmas do DTO
-    const { disciplinas, turmas, ...updateData } = dto;
+    // Extrair disciplinas, turmas e turmasDisciplinas do DTO
+    const { disciplinas, turmas, turmasDisciplinas, ...updateData } = dto;
 
-    // Validar se há conflito nas novas atribuições de disciplinas e turmas
-    let finalDisciplinas = disciplinas;
-    let finalTurmas = turmas;
+    // Processar turmasDisciplinas se fornecido
+    if (turmasDisciplinas !== undefined) {
+      await this.updateTurmaDisciplinas(id, turmasDisciplinas);
+    } else if (disciplinas !== undefined || turmas !== undefined) {
+      // Fallback para estrutura antiga (compatibilidade)
+      // Validar se há conflito nas novas atribuições
+      let finalDisciplinas = disciplinas;
+      let finalTurmas = turmas;
 
-    if (finalDisciplinas !== undefined || finalTurmas !== undefined) {
       if (finalDisciplinas === undefined) {
         finalDisciplinas = existingProf.disciplinas.map(d => d.disciplina_id);
       }
@@ -324,6 +377,16 @@ export class ProfessoresService {
       if (finalDisciplinas.length > 0 && finalTurmas.length > 0) {
         await this.validateNoOverlap(id, finalDisciplinas, finalTurmas);
       }
+
+      // Atualizar disciplinas se fornecidas
+      if (disciplinas !== undefined) {
+        await this.updateDisciplinas(id, disciplinas);
+      }
+
+      // Atualizar turmas se fornecidas
+      if (turmas !== undefined) {
+        await this.updateTurmas(id, turmas);
+      }
     }
 
     const updated = await this.prisma.professor.update({
@@ -331,16 +394,6 @@ export class ProfessoresService {
       data: updateData,
       include: { usuario: true, turmas_dirigidas: true },
     });
-
-    // Atualizar disciplinas se fornecidas
-    if (disciplinas !== undefined) {
-      await this.updateDisciplinas(id, disciplinas);
-    }
-
-    // Atualizar turmas se fornecidas
-    if (turmas !== undefined) {
-      await this.updateTurmas(id, turmas);
-    }
 
     this.logger.log(`[SERVICE-UPDATE] Professor ${id} atualizado com sucesso`);
     return updated;
@@ -393,6 +446,64 @@ export class ProfessoresService {
       this.logger.debug(`[SERVICE-UPDATE-TURMAS] ${turmaIds.length} turmas associadas`);
     } catch (error: any) {
       this.logger.warn(`[SERVICE-UPDATE-TURMAS] Erro ao atualizar turmas: ${error?.message}`);
+    }
+  }
+
+  private async updateTurmaDisciplinas(professorId: number, turmasDisciplinas: any[]) {
+    this.logger.debug(`[SERVICE-UPDATE-TURMA-DISCIPLINAS] Atualizando turma-disciplinas para professor ${professorId}`);
+    
+    try {
+      // Remover todas as associações turma-disciplina existentes
+      await this.prisma.professorTurmaDisciplina.deleteMany({
+        where: { professor_id: professorId },
+      });
+
+      // Criar novas associações
+      if (turmasDisciplinas.length > 0) {
+        await this.prisma.professorTurmaDisciplina.createMany({
+          data: turmasDisciplinas.map(td => ({
+            professor_id: professorId,
+            turma_id: td.turma_id,
+            disciplina_id: td.disciplina_id,
+          })),
+        });
+      }
+
+      this.logger.debug(`[SERVICE-UPDATE-TURMA-DISCIPLINAS] ${turmasDisciplinas.length} turma-disciplinas associadas`);
+    } catch (error: any) {
+      this.logger.warn(`[SERVICE-UPDATE-TURMA-DISCIPLINAS] Erro ao atualizar turma-disciplinas: ${error?.message}`);
+    }
+  }
+
+  private async validateNoOverlapForTurmaDisciplina(professorId: number | null, turmasDisciplinas: any[]) {
+    this.logger.debug(`[SERVICE-VALIDATE-OVERLAP-TD] Validando turma-disciplinas para professor ID: ${professorId}`);
+    
+    // Para cada turma-disciplina, verificar se outro professor já está ensinando a mesma disciplina naquela turma
+    for (const td of turmasDisciplinas) {
+      const conflict = await this.prisma.professorTurmaDisciplina.findFirst({
+        where: {
+          turma_id: td.turma_id,
+          disciplina_id: td.disciplina_id,
+          professor: {
+            status: { not: 'INATIVO' },
+            ...(professorId && { id_prof: { not: professorId } }),
+          },
+        },
+        include: {
+          professor: true,
+          turma: true,
+          disciplina: true,
+        },
+      });
+
+      if (conflict) {
+        const turmaName = conflict.turma ? (conflict.turma.sigla_turma || `ID ${conflict.turma.id_turma}`) : 'Turma';
+        const discName = conflict.disciplina ? (conflict.disciplina.sigla_disc || conflict.disciplina.descricao_disc) : 'Disciplina';
+        
+        throw new ConflictException(
+          `Conflito: O professor "${conflict.professor.nome_prof}" já leciona "${discName}" na turma "${turmaName}".`
+        );
+      }
     }
   }
 
